@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import Navbar from '@/components/Navbar';
 import LottiePlayer from '@/components/LottiePlayer';
+import LogoMark from '@/components/LogoMark';
 import { useApp } from '@/lib/AppContext';
 
 export default function CartPage() {
@@ -58,32 +59,6 @@ export default function CartPage() {
       setPromoError('Неверный промокод');
       setPromoDiscount(0);
     }
-  };
-
-  // Custom vector illustrations for cart items
-  const renderItemIllustration = (type: string) => {
-    if (type === 'food') {
-      return (
-        <svg viewBox="0 0 100 100" className="w-12 h-12 text-orange-400">
-          <path d="M30,85 L70,85 L75,30 L60,20 L40,20 L25,30 Z" fill="#FFE3CC" stroke="#F97316" strokeWidth="2.5" />
-          <path d="M40,20 L60,20 L65,12 L35,12 Z" fill="#F97316" />
-        </svg>
-      );
-    }
-    if (type === 'medicine') {
-      return (
-        <svg viewBox="0 0 100 100" className="w-12 h-12">
-          <rect x="35" y="30" width="30" height="50" rx="6" fill="#DCFCE7" stroke="#22C55E" strokeWidth="2" />
-          <rect x="42" y="18" width="16" height="12" rx="2" fill="#16A34A" />
-        </svg>
-      );
-    }
-    return (
-      <svg viewBox="0 0 100 100" className="w-12 h-12">
-        <path d="M15,35 Q50,22 85,35" stroke="#EA580C" strokeWidth="6" fill="none" strokeLinecap="round" />
-        <circle cx="50" cy="38" r="7" fill="#FBBF24" stroke="#D97706" strokeWidth="1" />
-      </svg>
-    );
   };
 
   return (
@@ -164,8 +139,8 @@ export default function CartPage() {
                     >
                       {/* Illustration & Metadata */}
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-xl bg-stone-50 flex items-center justify-center flex-shrink-0 border border-stone-100">
-                          {renderItemIllustration(item.imageType)}
+                        <div className="w-16 h-16 rounded-xl bg-stone-50 flex items-center justify-center flex-shrink-0 border border-stone-100 p-1.5">
+                          <LogoMark className="w-full h-full" alt={item.name} />
                         </div>
                         <div className="flex flex-col items-start gap-1.5">
                           <span className="text-[10px] bg-stone-100 text-stone-500 font-sans font-bold px-2 py-0.5 rounded-full uppercase tracking-wider inline-block">

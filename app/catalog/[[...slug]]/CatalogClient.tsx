@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Sparkles, Filter, ChevronRight, Award,
@@ -15,140 +14,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import Navbar from '@/components/Navbar';
 import ProductCard from '@/components/ProductCard';
 import Logo from '@/components/Logo';
+import LogoMark from '@/components/LogoMark';
 import { useApp } from '@/lib/AppContext';
 import LottiePlayer from '@/components/LottiePlayer';
 import Loader from '@/components/Loader';
 import { MOCK_PRODUCTS, CATALOG_STRUCTURE } from '@/lib/data';
 
 type PetType = 'cat' | 'dog' | 'bird' | 'rodent' | 'fish';
-
-// Custom SVG illustration renderer for each Catalog Category
-const renderCategoryIllustration = (id: string) => {
-  switch (id) {
-    case 'cat-food':
-    case 'dog-food':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-orange-500">
-          <path d="M30,80 L70,80 L75,35 L60,25 L40,25 L25,35 Z" fill="#FFF7ED" stroke="#F97316" strokeWidth="2.5" />
-          <path d="M40,25 L60,25 L65,18 L35,18 Z" fill="#F97316" />
-          <circle cx="50" cy="55" r="10" fill="#FED7AA" stroke="#F97316" strokeWidth="1.5" />
-          <path d="M47,58 Q50,54 53,58" stroke="#EA580C" strokeWidth="2" fill="none" strokeLinecap="round" />
-          <circle cx="47" cy="52" r="1.5" fill="#EA580C" />
-          <circle cx="53" cy="52" r="1.5" fill="#EA580C" />
-          <path d="M35,42 H65" stroke="#FDBA74" strokeWidth="1" strokeDasharray="3 2" />
-        </svg>
-      );
-    case 'cat-flea':
-    case 'dog-flea':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-emerald-500">
-          <circle cx="50" cy="50" r="32" fill="#ECFDF5" stroke="#10B981" strokeWidth="2.5" />
-          <rect x="42" y="32" width="16" height="24" rx="4" fill="#34D399" stroke="#059669" strokeWidth="1.5" />
-          <rect x="46" y="24" width="8" height="8" rx="1" fill="#059669" />
-          <g transform="translate(50,44) scale(0.65)" fill="#FFFFFF">
-            <rect x="-2" y="-7" width="4" height="14" rx="1" />
-            <rect x="-7" y="-2" width="14" height="4" rx="1" />
-          </g>
-          <path d="M30,68 A20,20 0 0,0 70,68" stroke="#10B981" strokeWidth="3" fill="none" strokeLinecap="round" />
-        </svg>
-      );
-    case 'cat-litter':
-    case 'dog-litter':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-sky-500">
-          <path d="M22,78 L78,78 L82,45 L18,45 Z" fill="#F0F9FF" stroke="#0EA5E9" strokeWidth="2.5" />
-          <ellipse cx="50" cy="45" rx="32" ry="8" fill="#38BDF8" stroke="#0EA5E9" strokeWidth="2" />
-          <ellipse cx="50" cy="45" rx="20" ry="4" fill="#E0F2FE" />
-          <path d="M42,28 Q50,15 58,28" stroke="#0284C7" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <text x="50" y="66" fill="#0369A1" fontSize="9" fontWeight="bold" textAnchor="middle" className="font-mono">
-            SILICA
-          </text>
-        </svg>
-      );
-    case 'cat-treat':
-    case 'dog-treat':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-rose-500">
-          <rect x="25" y="22" width="50" height="56" rx="8" fill="#FFF1F2" stroke="#F43F5E" strokeWidth="2.5" />
-          <path d="M25,38 H75 L75,54 H25 Z" fill="#FDA4AF" />
-          <circle cx="50" cy="46" r="5" fill="#F43F5E" />
-          <path d="M48,46 L52,46" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
-          <text x="50" y="68" fill="#9F1239" fontSize="8" fontWeight="bold" textAnchor="middle" className="font-comfortaa">
-            НЯМ-НЯМ
-          </text>
-        </svg>
-      );
-    case 'cat-litterbox':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-indigo-500">
-          <rect x="18" y="45" width="64" height="34" rx="10" fill="#EEF2FF" stroke="#6366F1" strokeWidth="2.5" />
-          <path d="M25,25 H75 V45 H25 Z" fill="#C7D2FE" stroke="#6366F1" strokeWidth="2" strokeLinejoin="round" />
-          <circle cx="50" cy="35" r="5" fill="#6366F1" />
-          <circle cx="44" cy="62" r="3" fill="#818CF8" />
-          <circle cx="56" cy="61" r="2.5" fill="#818CF8" />
-        </svg>
-      );
-    case 'cat-bed':
-    case 'dog-bed':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-amber-500">
-          <ellipse cx="50" cy="65" rx="36" ry="18" fill="#FEF3C7" stroke="#D97706" strokeWidth="2.5" />
-          <ellipse cx="50" cy="60" rx="28" ry="12" fill="#F59E0B" />
-          <ellipse cx="50" cy="56" rx="20" ry="8" fill="#FFFBEB" />
-          <path d="M42,42 L58,42" stroke="#B45309" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      );
-    case 'cat-scratcher':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-stone-500">
-          <rect x="20" y="78" width="60" height="8" rx="2" fill="#78716C" />
-          <rect x="45" y="24" width="10" height="54" fill="#D6D3D1" stroke="#78716C" strokeWidth="2" strokeDasharray="2 3" />
-          <rect x="35" y="22" width="30" height="8" rx="2" fill="#A8A29E" stroke="#57534E" strokeWidth="1.5" />
-          <circle cx="65" cy="38" r="4" fill="#EF4444" />
-          <path d="M50,22 Q65,18 65,34" stroke="#78716C" strokeWidth="1.5" fill="none" />
-        </svg>
-      );
-    case 'cat-clothes':
-    case 'dog-accessories':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-red-500">
-          <path d="M30,35 Q50,22 70,35 L75,55 L65,58 L60,48 L40,48 L35,58 L25,55 Z" fill="#FEE2E2" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="50" cy="40" r="4" fill="#EF4444" />
-          <line x1="50" y1="44" x2="50" y2="48" stroke="#EF4444" strokeWidth="2" />
-        </svg>
-      );
-    case 'cat-smart':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-cyan-500">
-          <rect x="30" y="32" width="40" height="48" rx="12" fill="#ECFEFF" stroke="#06B6D4" strokeWidth="2.5" />
-          <ellipse cx="50" cy="42" rx="14" ry="6" fill="#22D3EE" stroke="#0891B2" strokeWidth="1.5" />
-          <circle cx="50" cy="62" r="5" fill="#0891B2" />
-          <path d="M48,62 H52" stroke="#FFFFFF" strokeWidth="1.5" />
-          <path d="M50,32 Q50,18 42,22" stroke="#06B6D4" strokeWidth="2" fill="none" />
-        </svg>
-      );
-    case 'cat-toys':
-    case 'dog-toys':
-    case 'bird-toys':
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-teal-500">
-          <circle cx="50" cy="50" r="28" fill="#F0FDFA" stroke="#14B8A6" strokeWidth="2.5" />
-          <path d="M35,35 C42,42 58,42 65,35" stroke="#0D9488" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M35,65 C42,58 58,58 65,65" stroke="#0D9488" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <circle cx="50" cy="50" r="5" fill="#14B8A6" />
-        </svg>
-      );
-    default:
-      return (
-        <svg viewBox="0 0 100 100" className="w-14 h-14 text-stone-400">
-          <rect x="25" y="25" width="50" height="50" rx="8" fill="#F5F5F4" stroke="#A8A29E" strokeWidth="2" />
-          <circle cx="50" cy="50" r="12" fill="#E7E5E4" stroke="#A8A29E" strokeWidth="1.5" />
-          <path d="M44,50 H56" stroke="#78716C" strokeWidth="2" />
-          <path d="M50,44 V56" stroke="#78716C" strokeWidth="2" />
-        </svg>
-      );
-  }
-};
 
 interface CatalogProps {
   params: Promise<{ slug?: string[] }>;
@@ -325,13 +197,7 @@ function CatalogPageContent({ params }: CatalogProps) {
       badge: "Акции",
       bgGradient: "from-teal-600 via-teal-700 to-emerald-800",
       illustration: (
-        <svg viewBox="0 0 100 100" className="w-48 h-48 text-teal-200 opacity-90">
-          <rect x="25" y="20" width="50" height="60" rx="10" fill="currentColor" opacity="0.25" />
-          <path d="M40,15 L60,15 L65,8 L35,8 Z" fill="currentColor" />
-          <circle cx="50" cy="50" r="16" fill="#10B981" />
-          <rect x="47" y="40" width="6" height="20" fill="white" rx="1.5" />
-          <rect x="40" y="47" width="20" height="6" fill="white" rx="1.5" />
-        </svg>
+        <LogoMark className="w-40 h-40 sm:w-48 sm:h-48 opacity-95" />
       ),
       link: { slug: ['cat', 'cat-flea'], query: { badge: 'true' } }
     },
@@ -341,13 +207,7 @@ function CatalogPageContent({ params }: CatalogProps) {
       badge: "Акции",
       bgGradient: "from-[#EA580C] via-[#D97706] to-[#CA8A04]",
       illustration: (
-        <svg viewBox="0 0 100 100" className="w-48 h-48 text-orange-200 opacity-90">
-          <circle cx="50" cy="50" r="35" fill="currentColor" opacity="0.2" />
-          <circle cx="50" cy="50" r="25" fill="currentColor" opacity="0.4" />
-          <path d="M35,35 L65,65" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
-          <circle cx="35" cy="35" r="8" fill="currentColor" />
-          <circle cx="65" cy="65" r="8" fill="currentColor" />
-        </svg>
+        <LogoMark className="w-40 h-40 sm:w-48 sm:h-48 opacity-95" />
       ),
       link: { slug: ['dog', 'dog-toys'] }
     },
@@ -357,15 +217,7 @@ function CatalogPageContent({ params }: CatalogProps) {
       badge: "Акции",
       bgGradient: "from-amber-700 via-amber-800 to-stone-900",
       illustration: (
-        <svg viewBox="0 0 100 100" className="w-48 h-48 text-amber-200 opacity-90">
-          <path d="M25,80 L75,80 L78,35 L60,25 L40,25 L22,35 Z" fill="currentColor" opacity="0.2" />
-          <g transform="translate(50, 50) scale(1.2)" fill="currentColor">
-            <circle cx="0" cy="0" r="8" />
-            <circle cx="-11" cy="-12" r="5" />
-            <circle cx="0" cy="-17" r="5" />
-            <circle cx="11" cy="-12" r="5" />
-          </g>
-        </svg>
+        <LogoMark className="w-40 h-40 sm:w-48 sm:h-48 opacity-95" />
       ),
       link: { slug: ['cat', 'cat-food'], query: { onSale: 'true' } }
     }
@@ -616,53 +468,8 @@ function CatalogPageContent({ params }: CatalogProps) {
                     </span>
                   )}
                 </div>
-                <div className="scale-150 transform group-hover:scale-175 transition-transform duration-500">
-                  {activeProduct.type === 'food' && (
-                    <svg viewBox="0 0 100 100" className="w-36 h-36 text-orange-400">
-                      <path d="M30,85 L70,85 L75,30 L60,20 L40,20 L25,30 Z" fill="#FED7AA" stroke="#F97316" strokeWidth="2" />
-                      <path d="M40,20 L60,20 L65,12 L35,12 Z" fill="#F97316" />
-                      <g transform="translate(50, 52) scale(0.7)" fill="#EA580C">
-                        <circle cx="0" cy="0" r="8" />
-                        <circle cx="-11" cy="-12" r="5" />
-                        <circle cx="0" cy="-17" r="5" />
-                        <circle cx="11" cy="-12" r="5" />
-                      </g>
-                      <text x="50" y="78" fill="#7C2D12" fontSize="7" fontWeight="bold" textAnchor="middle" className="font-mono">
-                        Premium
-                      </text>
-                    </svg>
-                  )}
-                  {activeProduct.type === 'toy' && (
-                    <svg viewBox="0 0 100 100" className="w-36 h-36 text-teal-400">
-                      <circle cx="50" cy="50" r="32" fill="#99F6E4" stroke="#0D9488" strokeWidth="2" strokeDasharray="3 3" />
-                      <circle cx="50" cy="50" r="24" fill="#2DD4BF" stroke="#0D9488" strokeWidth="2" />
-                      <path d="M30,30 L70,70" stroke="#0F766E" strokeWidth="6" strokeLinecap="round" />
-                      <circle cx="30" cy="30" r="6" fill="#0F766E" />
-                      <circle cx="70" cy="70" r="6" fill="#0F766E" />
-                    </svg>
-                  )}
-                  {activeProduct.type === 'medicine' && (
-                    <svg viewBox="0 0 100 100" className="w-36 h-36">
-                      <rect x="35" y="30" width="30" height="50" rx="6" fill="#DCFCE7" stroke="#22C55E" strokeWidth="2" />
-                      <rect x="42" y="18" width="16" height="12" rx="2" fill="#16A34A" />
-                      <circle cx="50" cy="55" r="10" fill="#22C55E" />
-                      <rect x="48" y="50" width="4" height="10" fill="#FFFFFF" rx="1" />
-                      <rect x="45" y="53" width="10" height="4" fill="#FFFFFF" rx="1" />
-                      <path d="M50,38 C48,40 45,43 45,45 C45,47 47,49 50,49 C53,49 55,47 55,45 Z" fill="#EF4444" />
-                    </svg>
-                  )}
-                  {activeProduct.type === 'accessory' && (
-                    <svg viewBox="0 0 100 100" className="w-36 h-36">
-                      <ellipse cx="50" cy="65" rx="35" ry="15" fill="#FEE2E2" stroke="#EF4444" strokeWidth="2.5" />
-                      <ellipse cx="50" cy="58" rx="25" ry="8" fill="#FCA5A5" />
-                      <circle cx="40" cy="62" r="2.5" fill="#991B1B" />
-                      <circle cx="50" cy="64" r="3" fill="#991B1B" />
-                      <circle cx="58" cy="61" r="2.5" fill="#991B1B" />
-                      <path d="M15,35 Q50,22 85,35" stroke="#EA580C" strokeWidth="6" fill="none" strokeLinecap="round" />
-                      <circle cx="50" cy="38" r="7" fill="#FBBF24" stroke="#D97706" strokeWidth="1" />
-                      <path d="M50,34 L50,42" stroke="#D97706" strokeWidth="1.5" />
-                    </svg>
-                  )}
+                <div className="transform group-hover:scale-110 transition-transform duration-500">
+                  <LogoMark className="w-48 h-48 sm:w-56 sm:h-56" alt={activeProduct.name} />
                 </div>
               </div>
 
@@ -1544,8 +1351,8 @@ function CatalogPageContent({ params }: CatalogProps) {
                               }}
                               className="bg-white border border-stone-200/80 rounded-2xl p-5 hover:border-orange-500 hover:shadow-md transition-all cursor-pointer flex flex-col items-center justify-between text-center gap-3 group h-44 relative overflow-hidden"
                             >
-                              <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                                {renderCategoryIllustration(subcat.id)}
+                              <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform p-1">
+                                <LogoMark className="w-full h-full" alt={subcat.name} />
                               </div>
 
                               <span className="text-[11px] font-extrabold font-comfortaa text-stone-800 group-hover:text-orange-500 transition-colors leading-tight line-clamp-2">
@@ -1601,8 +1408,8 @@ function CatalogPageContent({ params }: CatalogProps) {
                               }}
                               className="bg-white border border-stone-200/80 rounded-2xl p-5 hover:border-orange-500 hover:shadow-md transition-all cursor-pointer flex flex-col items-center justify-between text-center gap-3 group h-44 relative overflow-hidden"
                             >
-                              <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                                {renderCategoryIllustration(subcat.id)}
+                              <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform p-1">
+                                <LogoMark className="w-full h-full" alt={sec} />
                               </div>
 
                               <span className="text-[11px] font-extrabold font-comfortaa text-stone-800 group-hover:text-orange-500 transition-colors leading-tight line-clamp-2">

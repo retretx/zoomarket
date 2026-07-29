@@ -83,11 +83,11 @@ export default function Navbar() {
             <Link href="/" className="flex-shrink-0 flex items-center gap-2">
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-white ring-1 ring-stone-200/80 flex-shrink-0">
                 <Image
-                  src="/logo_aibolit.jpg"
+                  src="/logo.svg"
                   alt="Айболит"
                   width={56}
                   height={56}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
                 />
               </div>
@@ -253,23 +253,21 @@ export default function Navbar() {
                   </motion.div>
                 </Link>
 
-                {/* Cart Icon with bouncing indicator/visual state */}
+                {/* Cart Icon */}
                 <Link href="/cart" className="relative block">
-                  <motion.div
-                    whileHover={{ scale: 1.08 }}
+                  <div
                     className={`p-2.5 rounded-full text-white transition-colors ${pathname === '/cart' ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'
                       }`}
                     title="Корзина"
                   >
                     <ShoppingBag className="w-5.5 h-5.5 stroke-[2]" />
 
-                    {/* Bouncing Visual Badge indicator (as requested) */}
                     {cartCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-green-500 text-white min-w-4 h-4 rounded-full flex items-center justify-center font-bold font-mono text-[9px] px-1 animate-bounce shadow">
+                      <span className="absolute -top-1 -right-1 bg-green-500 text-white min-w-4 h-4 rounded-full flex items-center justify-center font-bold font-mono text-[9px] px-1 shadow">
                         {cartCount}
                       </span>
                     )}
-                  </motion.div>
+                  </div>
                 </Link>
 
                 {/* Account / Auth Trigger icon */}

@@ -17,11 +17,11 @@ export default function Logo({
     <div className="flex items-center gap-3 select-none">
       <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-white ring-1 ring-stone-200/80 flex-shrink-0">
         <Image
-          src="/logo_aibolit.jpg"
+          src="/logo.svg"
           alt="Айболит"
           width={56}
           height={56}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           referrerPolicy="no-referrer"
         />
       </div>

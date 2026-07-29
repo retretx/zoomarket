@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import Navbar from '@/components/Navbar';
 import LottiePlayer from '@/components/LottiePlayer';
+import LogoMark from '@/components/LogoMark';
 import { useApp } from '@/lib/AppContext';
 
 // Store locations mock data
@@ -621,8 +622,8 @@ export default function CheckoutPage() {
                       return (
                         <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-lg flex-shrink-0">
-                              {item.imageType === 'food' ? '🍖' : item.imageType === 'toy' ? '🧸' : item.imageType === 'medicine' ? '💊' : '🐾'}
+                            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 p-1">
+                              <LogoMark className="w-full h-full" alt={item.name} />
                             </div>
                             <div>
                               <span className="text-xs font-bold text-stone-850 block line-clamp-1 leading-tight">{item.name}</span>

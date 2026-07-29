@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Star, ShoppingCart, Heart, Plus, Minus } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
+import LogoMark from '@/components/LogoMark';
 
 export interface Product {
   id: string;
@@ -32,75 +33,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // SVG Custom Illustrations for each product type
-  const renderProductIllustration = () => {
-    switch (product.type) {
-      case 'food':
-        return (
-          <svg viewBox="0 0 100 100" className="w-24 h-24 text-orange-400">
-            {/* Bag shape */}
-            <path d="M30,85 L70,85 L75,30 L60,20 L40,20 L25,30 Z" fill="#FED7AA" stroke="#F97316" strokeWidth="2" />
-            <path d="M40,20 L60,20 L65,12 L35,12 Z" fill="#F97316" />
-            {/* Paw print on the bag */}
-            <g transform="translate(50, 52) scale(0.7)" fill="#EA580C">
-              <circle cx="0" cy="0" r="8" />
-              <circle cx="-11" cy="-12" r="5" />
-              <circle cx="0" cy="-17" r="5" />
-              <circle cx="11" cy="-12" r="5" />
-            </g>
-            {/* Text logo */}
-            <text x="50" y="78" fill="#7C2D12" fontSize="7" fontWeight="bold" textAnchor="middle" className="font-mono">
-              Premium
-            </text>
-          </svg>
-        );
-      case 'toy':
-        return (
-          <svg viewBox="0 0 100 100" className="w-24 h-24 text-teal-400">
-            {/* Toy Ball */}
-            <circle cx="50" cy="50" r="32" fill="#99F6E4" stroke="#0D9488" strokeWidth="2" strokeDasharray="3 3" />
-            <circle cx="50" cy="50" r="24" fill="#2DD4BF" stroke="#0D9488" strokeWidth="2" />
-            {/* Squeaky bone crossing */}
-            <path d="M30,30 L70,70" stroke="#0F766E" strokeWidth="6" strokeLinecap="round" />
-            <circle cx="30" cy="30" r="6" fill="#0F766E" />
-            <circle cx="70" cy="70" r="6" fill="#0F766E" />
-          </svg>
-        );
-      case 'medicine':
-        return (
-          <svg viewBox="0 0 100 100" className="w-24 h-24">
-            {/* Medicine bottle */}
-            <rect x="35" y="30" width="30" height="50" rx="6" fill="#DCFCE7" stroke="#22C55E" strokeWidth="2" />
-            <rect x="42" y="18" width="16" height="12" rx="2" fill="#16A34A" />
-            {/* Plus sign background */}
-            <circle cx="50" cy="55" r="10" fill="#22C55E" />
-            <rect x="48" y="50" width="4" height="10" fill="#FFFFFF" rx="1" />
-            <rect x="45" y="53" width="10" height="4" fill="#FFFFFF" rx="1" />
-            {/* Cute droplet element */}
-            <path d="M50,38 C48,40 45,43 45,45 C45,47 47,49 50,49 C53,49 55,47 55,45 Z" fill="#EF4444" />
-          </svg>
-        );
-      case 'accessory':
-      default:
-        return (
-          <svg viewBox="0 0 100 100" className="w-24 h-24">
-            {/* Pet Bowl or Collar */}
-            <ellipse cx="50" cy="65" rx="35" ry="15" fill="#FEE2E2" stroke="#EF4444" strokeWidth="2.5" />
-            <ellipse cx="50" cy="58" rx="25" ry="8" fill="#FCA5A5" />
-            {/* Small fish hanging or food kibbles */}
-            <circle cx="40" cy="62" r="2.5" fill="#991B1B" />
-            <circle cx="50" cy="64" r="3" fill="#991B1B" />
-            <circle cx="58" cy="61" r="2.5" fill="#991B1B" />
-            {/* Collar shape */}
-            <path d="M15,35 Q50,22 85,35" stroke="#EA580C" strokeWidth="6" fill="none" strokeLinecap="round" />
-            {/* Gold Pendant */}
-            <circle cx="50" cy="38" r="7" fill="#FBBF24" stroke="#D97706" strokeWidth="1" />
-            <path d="M50,34 L50,42" stroke="#D97706" strokeWidth="1.5" />
-          </svg>
-        );
-    }
-  };
-
   const { isFavorite, toggleFavorite, addToCart, cart, updateQty } = useApp();
   const liked = isFavorite(product.id);
   const [selectedSize, setSelectedSize] = React.useState(
@@ -152,7 +84,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           whileHover={{ scale: 1.12, rotate: -2 }}
           transition={{ type: "spring", stiffness: 300, damping: 15 }}
         >
-          {renderProductIllustration()}
+          <LogoMark className="w-28 h-28" alt={product.name} />
         </motion.div>
 
         {/* Category Label at bottom of image */}

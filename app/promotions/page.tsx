@@ -7,6 +7,7 @@ import { Sparkles, Calendar, ChevronLeft, Gift, Percent, Truck, Heart } from 'lu
 
 import Navbar from '@/components/Navbar';
 import ProductCard from '@/components/ProductCard';
+import LogoMark from '@/components/LogoMark';
 import { MOCK_PRODUCTS } from '@/lib/data';
 
 
@@ -59,7 +60,7 @@ export default function PromotionsPage() {
       id: 3,
       badge: "Время играть",
       badgeBg: "bg-sky-500",
-      badgeIcon: <Sparkles className="w-3.5 h-3.5" />,
+      // badgeIcon: <Sparkles className="w-3.5 h-3.5" />,
       title: (
         <>
           Купи игрушку — <br /> верни хвостику радость!
@@ -196,15 +197,9 @@ export default function PromotionsPage() {
                 subtitle: "Скидки до -25% на комплексные витамины, пребиотики, рыбий жир и полезные лакомства для кошек и собак. Поддержите иммунитет любимца!",
                 bgGradient: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
                 borderClass: "border-amber-200",
-                badgeIcon: <Sparkles className="w-3.5 h-3.5 text-amber-500" />,
+                // badgeIcon: <Sparkles className="w-3.5 h-3.5 text-amber-500" />,
                 illustration: (
-                  <svg viewBox="0 0 100 100" className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 text-amber-600 opacity-90">
-                    <rect x="35" y="25" width="30" height="55" rx="8" fill="currentColor" opacity="0.2" />
-                    <circle cx="50" cy="40" r="12" fill="currentColor" opacity="0.4" />
-                    <path d="M44,40 L56,40 M50,34 L50,46" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-                    <circle cx="50" cy="65" r="5" fill="currentColor" opacity="0.6" />
-                    <circle cx="50" cy="72" r="3" fill="currentColor" opacity="0.6" />
-                  </svg>
+                  <LogoMark className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36" />
                 ),
                 link: "/catalog/cat/cat-treat?onSale=true",
                 buttonText: "Выбрать витамины 💊"
@@ -219,10 +214,7 @@ export default function PromotionsPage() {
                 borderClass: "border-sky-200",
                 badgeIcon: <Heart className="w-3.5 h-3.5 text-sky-500" />,
                 illustration: (
-                  <svg viewBox="0 0 100 100" className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 text-sky-600 opacity-90">
-                    <path d="M50,15 L75,30 L75,65 C75,80 50,90 50,90 C50,90 25,80 25,65 L25,30 Z" fill="currentColor" opacity="0.2" />
-                    <path d="M38,45 L47,54 L65,36" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                  </svg>
+                  <LogoMark className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36" />
                 ),
                 link: "/catalog/cat/cat-flea?onSale=true",
                 buttonText: "Защитить любимца 🛡️"
