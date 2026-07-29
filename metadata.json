@@ -1,0 +1,6 @@
+{
+  "name": "Айболит — Заботливый зоомагазин",
+  "description": "Профессиональный дизайн-макет сети зоомагазинов Айболит в современном стиле",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

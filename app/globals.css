@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --font-comfortaa: var(--font-comfortaa), 'Comfortaa', cursive, sans-serif;
+  --font-inter: var(--font-inter), 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font-inter), sans-serif;
+}
+
+/* Rounded and shadow design system variables */
+.shadow-aibolit {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-aibolit-lg {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.font-comfortaa {
+  font-family: var(--font-comfortaa);
+}
