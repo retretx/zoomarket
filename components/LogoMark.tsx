@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { withBasePath } from '@/lib/basePath';
 
 export default function LogoMark({
   className = 'w-24 h-24',
@@ -14,7 +15,7 @@ export default function LogoMark({
 }) {
   return (
     <Image
-      src="/logo.svg"
+      src={withBasePath('/logo.svg')}
       alt={alt}
       width={200}
       height={200}

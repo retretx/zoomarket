@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { withBasePath } from '@/lib/basePath';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Heart, ShoppingBag, Search, Menu, X, HelpCircle, PhoneCall, Gift, Truck, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -83,7 +84,7 @@ export default function Navbar() {
             <Link href="/" className="flex-shrink-0 flex items-center gap-2">
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-white ring-1 ring-stone-200/80 flex-shrink-0">
                 <Image
-                  src="/logo.svg"
+                  src={withBasePath('/logo.svg')}
                   alt="Айболит"
                   width={56}
                   height={56}
