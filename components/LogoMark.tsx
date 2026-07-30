@@ -15,7 +15,7 @@ export default function LogoMark({
 }) {
   return (
     <Image
-      src={withBasePath('/logo.svg')}
+      src={withBasePath('/logo_aibolit.jpg')}
       alt={alt}
       width={200}
       height={200}

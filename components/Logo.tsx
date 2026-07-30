@@ -18,7 +18,7 @@ export default function Logo({
     <div className="flex items-center gap-3 select-none">
       <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-white ring-1 ring-stone-200/80 flex-shrink-0">
         <Image
-          src={withBasePath('/logo.svg')}
+          src={withBasePath('/logo_aibolit.jpg')}
           alt="Айболит"
           width={56}
           height={56}
