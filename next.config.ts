@@ -2,6 +2,8 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   output: 'export',
+  basePath: '/zoomarket',
+  assetPrefix: '/zoomarket',
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
