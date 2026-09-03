@@ -2,25 +2,42 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Sparkles, Filter, ChevronRight, Award,
+import { 
+  Sparkles, Filter, ChevronRight, Award, 
   Heart, ThumbsUp, HelpCircle, AlertCircle, RefreshCw,
   Percent, Tag, ArrowRight, Gift, ShoppingCart, Truck, X,
   ArrowLeft, ChevronDown, ChevronUp, Check, Star, ChevronLeft, Plus, Minus
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 
 import Navbar from '@/components/Navbar';
 import ProductCard from '@/components/ProductCard';
-import Logo from '@/components/Logo';
-import LogoMark from '@/components/LogoMark';
+import Footer from '@/components/Footer';
 import { useApp } from '@/lib/AppContext';
 import LottiePlayer from '@/components/LottiePlayer';
 import Loader from '@/components/Loader';
 import { MOCK_PRODUCTS, CATALOG_STRUCTURE } from '@/lib/data';
+import {
+  decodeCatalogSlugSegment,
+  encodeCatalogSlugSegment,
+  getAllCategoryPillLabel,
+} from '@/lib/catalogSlug';
+import { VirtualizedCatalogContainer } from '@/components/virtualCatalog/VirtualizedCatalogContainer';
 
 type PetType = 'cat' | 'dog' | 'bird' | 'rodent' | 'fish';
+
+// Иллюстрация категории — единый логотип Айболит
+const renderCategoryIllustration = (_id: string) => (
+  <Image
+    src="/logo_aibolit.jpg"
+    alt=""
+    width={56}
+    height={56}
+    className="w-14 h-14 object-cover rounded-full"
+  />
+);
 
 interface CatalogProps {
   params: Promise<{ slug?: string[] }>;
@@ -32,10 +49,16 @@ function CatalogPageContent({ params }: CatalogProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Decode the URL state parameters
+  // Decode the URL state parameters (полная раскодировка — защита от двойного encode)
   const selectedAnimal: PetType = (slug[0] as PetType) || 'cat';
-  const activeSubcategoryId: string | null = slug[1] || null;
-  const activeSubSection: string = slug[2] ? decodeURIComponent(slug[2]) : 'all';
+  const isBrandsCatalog = slug[0] === 'brands';
+  const activeBrandName = isBrandsCatalog && slug[1]
+    ? decodeCatalogSlugSegment(slug[1])
+    : null;
+  const activeSubcategoryId: string | null = isBrandsCatalog ? null : (slug[1] || null);
+  const activeSubSection: string = isBrandsCatalog
+    ? 'all'
+    : (slug[2] ? decodeCatalogSlugSegment(slug[2]) : 'all');
 
   // Read query parameters
   const priceMin = searchParams?.get('priceMin') || '';
@@ -72,7 +95,7 @@ function CatalogPageContent({ params }: CatalogProps) {
   };
 
   const { isFavorite, toggleFavorite, addToCart, cart, updateQty, productRatings, submitProductRating } = useApp();
-
+  
   const displayRating = useMemo(() => {
     if (!activeProduct) return 0;
     return productRatings[activeProduct.id]?.rating ?? activeProduct.rating;
@@ -88,7 +111,7 @@ function CatalogPageContent({ params }: CatalogProps) {
     return productRatings[activeProduct.id]?.userRating;
   }, [activeProduct, productRatings]);
 
-  const [userSelectedSize, setUserSelectedSize] = React.useState<{ prodId: string, size: string } | null>(null);
+  const [userSelectedSize, setUserSelectedSize] = React.useState<{prodId: string, size: string} | null>(null);
   const [hoverRating, setHoverRating] = React.useState<number | null>(null);
   const [showRatingSuccess, setShowRatingSuccess] = React.useState<boolean>(false);
 
@@ -121,7 +144,8 @@ function CatalogPageContent({ params }: CatalogProps) {
     if (updates.newSlug) {
       pathSegments = updates.newSlug;
     }
-    const path = `/catalog/${pathSegments.join('/')}`;
+    const encodedSegments = pathSegments.map(s => encodeURIComponent(s));
+    const path = `/catalog/${encodedSegments.join('/')}`;
 
     // 2. Build new search params
     const current = new URLSearchParams(Array.from(searchParams?.entries() || []));
@@ -179,91 +203,204 @@ function CatalogPageContent({ params }: CatalogProps) {
   const isSearchActive = !!searchParamValue;
 
   const [currentSlide, setCurrentSlide] = React.useState<number>(0);
+  const [isHeroSliding, setIsHeroSliding] = React.useState(false);
+  const [heroTrackWidth, setHeroTrackWidth] = React.useState(0);
+  const [heroAnimCustom, setHeroAnimCustom] = React.useState({ direction: 1, offset: 1200 });
+  const isHeroSlidingRef = React.useRef(false);
+  const currentSlideRef = React.useRef(0);
+  const heroTrackRef = React.useRef<HTMLDivElement>(null);
+  const [lowerSlide, setLowerSlide] = React.useState<number>(0);
   const [timerDuration, setTimerDuration] = React.useState<number>(10000);
+  const shouldReduceMotion = useReducedMotion();
 
   interface CarouselSlide {
-    title: string;
+    title: React.ReactNode;
     subtitle: string;
     badge: string;
+    bgClass: string;
     bgGradient: string;
+    btnText?: string;
     illustration: React.ReactNode;
-    link: { slug: string[]; query?: Record<string, string | null> };
+    link?: { slug: string[]; query?: Record<string, string | null> };
   }
 
   const carouselSlides: CarouselSlide[] = [
     {
-      title: "Здоровье начинается с правильного ухода",
-      subtitle: "Специализированная диета, натуральные лечебные корма и сертифицированные витамины от лучших ветеринарных врачей со скидкой до -15%!",
-      badge: "Акции",
-      bgGradient: "from-teal-600 via-teal-700 to-emerald-800",
+      title: "Новинка Grandin Holistic!",
+      subtitle: "Сухой и влажный гипоаллергенный корм супер-премиум класса для кошек и собак.",
+      badge: "Новинка",
+      bgClass: "bg-[#D1F2D9]",
+      bgGradient: "from-emerald-700 via-teal-800 to-green-900",
+      btnText: "Перейти",
       illustration: (
-        <LogoMark className="w-40 h-40 sm:w-48 sm:h-48 opacity-95" />
+        <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+          <div className="absolute inset-0 bg-emerald-300/30 rounded-full blur-2xl transform scale-90" />
+          <Image
+            src="/logo_aibolit.jpg"
+            alt=""
+            width={280}
+            height={280}
+            className="w-full h-full object-cover rounded-full relative z-10 drop-shadow-xl"
+          />
+        </div>
       ),
-      link: { slug: ['cat', 'cat-flea'], query: { badge: 'true' } }
+      link: { slug: ['cat', 'cat-food'] }
     },
     {
-      title: "Развивающие игры для здоровой активности",
-      subtitle: "Интерактивные развивающие игрушки, умные кормушки и когтеточки для укрепления интеллекта и поддержания великолепной физической формы.",
-      badge: "Акции",
-      bgGradient: "from-[#EA580C] via-[#D97706] to-[#CA8A04]",
-      illustration: (
-        <LogoMark className="w-40 h-40 sm:w-48 sm:h-48 opacity-95" />
+      title: (
+        <>
+          Все для здоровья <br className="hidden sm:inline" />
+          и счастья{' '}
+          <span className="text-[#F97316] relative inline-block">
+            ваших лапок
+            <svg className="absolute left-0 bottom-1 w-full h-2 text-orange-400 opacity-60" viewBox="0 0 100 10" preserveAspectRatio="none">
+              <path d="M0,5 Q50,9 100,5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none" />
+            </svg>
+          </span>
+        </>
       ),
-      link: { slug: ['dog', 'dog-toys'] }
+      subtitle: "Отборные фермерские корма, сертифицированные витамины, средства ухода и развивающие интерактивные игрушки для ваших любимых питомцев.",
+      badge: "Заботливый зоомаркет Айболит",
+      bgClass: "bg-[#FCE3CF]",
+      bgGradient: "from-orange-600 via-amber-600 to-yellow-700",
+      illustration: (
+        <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+          <div className="absolute inset-0 bg-orange-400/20 rounded-full blur-2xl transform scale-90" />
+          <Image
+            src="/logo_aibolit.jpg"
+            alt=""
+            width={280}
+            height={280}
+            className="w-full h-full object-cover rounded-full relative z-10 drop-shadow-xl"
+          />
+        </div>
+      ),
     },
     {
-      title: "Вкусная забота в каждой крошке",
-      subtitle: "100% натуральные фермерские лакомства и гипоаллергенные угощения без искусственных красителей и вредных консервантов. Счастье для хвостика!",
-      badge: "Акции",
-      bgGradient: "from-amber-700 via-amber-800 to-stone-900",
+      title: "Сезонная защита от клещей и паразитов",
+      subtitle: "Сертифицированная ветаптека: капли, ошейники, спреи и таблетки от ведущих ветеринарных брендов.",
+      badge: "Ветаптека",
+      bgClass: "bg-[#D5EBFD]",
+      bgGradient: "from-sky-700 via-blue-800 to-indigo-900",
+      btnText: "Выбрать защиту",
       illustration: (
-        <LogoMark className="w-40 h-40 sm:w-48 sm:h-48 opacity-95" />
+        <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+          <div className="absolute inset-0 bg-sky-400/20 rounded-full blur-2xl transform scale-90" />
+          <Image
+            src="/logo_aibolit.jpg"
+            alt=""
+            width={280}
+            height={280}
+            className="w-full h-full object-cover rounded-full relative z-10 drop-shadow-xl"
+          />
+        </div>
       ),
-      link: { slug: ['cat', 'cat-food'], query: { onSale: 'true' } }
+      link: { slug: ['cat', 'cat-flea'] }
     }
   ];
 
+  const goToHeroSlide = React.useCallback((index: number, direction: number) => {
+    if (isHeroSlidingRef.current) return;
+    const total = carouselSlides.length;
+    const nextIndex = ((index % total) + total) % total;
+    if (nextIndex === currentSlideRef.current) return;
+
+    const offset = heroTrackRef.current?.offsetWidth || heroTrackWidth || 1200;
+    isHeroSlidingRef.current = true;
+    currentSlideRef.current = nextIndex;
+    setHeroAnimCustom({ direction, offset });
+    setIsHeroSliding(true);
+    setCurrentSlide(nextIndex);
+  }, [carouselSlides.length, heroTrackWidth]);
+
+  const unlockHeroSlide = React.useCallback(() => {
+    isHeroSlidingRef.current = false;
+    setIsHeroSliding(false);
+  }, []);
+
+  const handleNextSlide = () => {
+    goToHeroSlide(currentSlideRef.current + 1, 1);
+  };
+
+  const handlePrevSlide = () => {
+    goToHeroSlide(currentSlideRef.current - 1, -1);
+  };
+
   const handleDotClick = (index: number) => {
-    setCurrentSlide(index);
+    if (index === currentSlideRef.current) return;
+    goToHeroSlide(index, index > currentSlideRef.current ? 1 : -1);
     setTimerDuration(15000);
   };
 
   React.useEffect(() => {
-    if (slug.length !== 0 || isSearchActive) return;
-
+    if (slug.length !== 0 || isSearchActive || isHeroSliding) return;
+    
     const interval = setTimeout(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+      goToHeroSlide(currentSlideRef.current + 1, 1);
       setTimerDuration(10000);
     }, timerDuration);
-
+    
     return () => clearTimeout(interval);
-  }, [currentSlide, timerDuration, slug.length, isSearchActive, carouselSlides.length]);
+  }, [currentSlide, timerDuration, slug.length, isSearchActive, isHeroSliding, goToHeroSlide]);
+
+  // Страховка: не залипаем в isHeroSliding, если onExitComplete не пришёл
+  React.useEffect(() => {
+    if (!isHeroSliding) return;
+    const unlock = setTimeout(unlockHeroSlide, 900);
+    return () => clearTimeout(unlock);
+  }, [isHeroSliding, currentSlide, unlockHeroSlide]);
+
+  React.useLayoutEffect(() => {
+    const el = heroTrackRef.current;
+    if (!el) return;
+
+    const updateWidth = () => setHeroTrackWidth(el.offsetWidth);
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [slug.length, isSearchActive]);
+
+  React.useEffect(() => {
+    if (slug.length !== 0 || isSearchActive) return;
+    
+    const interval = setInterval(() => {
+      setLowerSlide((prev) => (prev + 1) % carouselSlides.length);
+    }, 12000);
+    
+    return () => clearInterval(interval);
+  }, [slug.length, isSearchActive, carouselSlides.length]);
 
   // Live filter mock products based on ALL filters
   const filteredProducts = MOCK_PRODUCTS.filter(product => {
     // 1. Match Search Query (matches name, brand, category, subSection, or animal)
     if (searchParamValue) {
       const q = searchParamValue.toLowerCase();
-      const matchesSearch =
+      const matchesSearch = 
         product.name.toLowerCase().includes(q) ||
         product.brand?.toLowerCase().includes(q) ||
         product.category.toLowerCase().includes(q) ||
         (product.subSection && product.subSection.toLowerCase().includes(q)) ||
         (product.animal === 'cat' && 'кошка кошачий кот котята'.includes(q)) ||
         (product.animal === 'dog' && 'собака собачий пес щенок'.includes(q));
-
+      
       if (!matchesSearch) return false;
     }
 
-    // 2. Match Pet Type (Only enforce if slug.length > 0 or if search is NOT active)
+    // 2. Match Pet Type / Brand catalog
     const hasSlugAnimal = slug.length > 0;
-    if ((hasSlugAnimal || !searchParamValue) && product.animal !== selectedAnimal) return false;
+    if (isBrandsCatalog) {
+      if (activeBrandName && product.brand !== activeBrandName) return false;
+    } else if ((hasSlugAnimal || !searchParamValue) && product.animal !== selectedAnimal) {
+      return false;
+    }
 
     // 3. Match Main Subcategory (e.g., cat-food)
-    if (activeSubcategoryId && product.subcategoryId !== activeSubcategoryId) return false;
+    if (!isBrandsCatalog && activeSubcategoryId && product.subcategoryId !== activeSubcategoryId) return false;
 
     // 4. Match sub-section (e.g., 'Сухой корм')
-    if (activeSubSection !== 'all' && product.subSection !== activeSubSection) return false;
+    if (!isBrandsCatalog && activeSubSection !== 'all' && product.subSection !== activeSubSection) return false;
 
     // 5. Match On Sale only
     if (onSaleOnly && !product.onSale) return false;
@@ -292,13 +429,17 @@ function CatalogPageContent({ params }: CatalogProps) {
 
   const categoryBaseProducts = useMemo(() => {
     return MOCK_PRODUCTS.filter(product => {
+      if (isBrandsCatalog) {
+        if (activeBrandName && product.brand !== activeBrandName) return false;
+        return true;
+      }
       const hasSlugAnimal = slug.length > 0;
       if (hasSlugAnimal && product.animal !== selectedAnimal) return false;
       if (activeSubcategoryId && product.subcategoryId !== activeSubcategoryId) return false;
       if (activeSubSection !== 'all' && product.subSection !== activeSubSection) return false;
       return true;
     });
-  }, [slug, selectedAnimal, activeSubcategoryId, activeSubSection]);
+  }, [slug, selectedAnimal, activeSubcategoryId, activeSubSection, isBrandsCatalog, activeBrandName]);
 
   // Sorting
   if (sortType === 'cheap-first') {
@@ -311,32 +452,44 @@ function CatalogPageContent({ params }: CatalogProps) {
   }
 
   // Get active subcategory object
-  const activeSubcategory = activeSubcategoryId
+  const activeSubcategory = activeSubcategoryId 
     ? Object.values(CATALOG_STRUCTURE)
-      .flatMap(group => group.subcategories)
-      .find(sub => sub.id === activeSubcategoryId)
+        .flatMap(group => group.subcategories)
+        .find(sub => sub.id === activeSubcategoryId)
     : null;
 
   // Faceted Brands Count calculations
   const availableBrandsInSubcategory = useMemo(() => {
     const brandsMap: Record<string, number> = {};
     MOCK_PRODUCTS.forEach(p => {
-      if (p.animal === selectedAnimal && (!activeSubcategoryId || p.subcategoryId === activeSubcategoryId)) {
-        if (p.brand) {
-          brandsMap[p.brand] = (brandsMap[p.brand] || 0) + 1;
-        }
+      const matchesScope = isBrandsCatalog
+        ? (!activeBrandName || p.brand === activeBrandName)
+        : (p.animal === selectedAnimal && (!activeSubcategoryId || p.subcategoryId === activeSubcategoryId));
+
+      if (matchesScope && p.brand) {
+        brandsMap[p.brand] = (brandsMap[p.brand] || 0) + 1;
       }
     });
     return Object.entries(brandsMap).map(([name, count]) => ({ name, count }));
-  }, [selectedAnimal, activeSubcategoryId]);
+  }, [selectedAnimal, activeSubcategoryId, isBrandsCatalog, activeBrandName]);
 
   const onSaleCount = useMemo(() => {
-    return MOCK_PRODUCTS.filter(p => p.animal === selectedAnimal && (!activeSubcategoryId || p.subcategoryId === activeSubcategoryId) && p.onSale).length;
-  }, [selectedAnimal, activeSubcategoryId]);
+    return MOCK_PRODUCTS.filter(p => {
+      if (isBrandsCatalog) {
+        return (!activeBrandName || p.brand === activeBrandName) && p.onSale;
+      }
+      return p.animal === selectedAnimal && (!activeSubcategoryId || p.subcategoryId === activeSubcategoryId) && p.onSale;
+    }).length;
+  }, [selectedAnimal, activeSubcategoryId, isBrandsCatalog, activeBrandName]);
 
   const onBadgeCount = useMemo(() => {
-    return MOCK_PRODUCTS.filter(p => p.animal === selectedAnimal && (!activeSubcategoryId || p.subcategoryId === activeSubcategoryId) && p.badge).length;
-  }, [selectedAnimal, activeSubcategoryId]);
+    return MOCK_PRODUCTS.filter(p => {
+      if (isBrandsCatalog) {
+        return (!activeBrandName || p.brand === activeBrandName) && p.badge;
+      }
+      return p.animal === selectedAnimal && (!activeSubcategoryId || p.subcategoryId === activeSubcategoryId) && p.badge;
+    }).length;
+  }, [selectedAnimal, activeSubcategoryId, isBrandsCatalog, activeBrandName]);
 
   // Sidebar animals accordion map
   const [expandedAnimals, setExpandedAnimals] = React.useState<Record<PetType, boolean>>({
@@ -468,8 +621,14 @@ function CatalogPageContent({ params }: CatalogProps) {
                     </span>
                   )}
                 </div>
-                <div className="transform group-hover:scale-110 transition-transform duration-500">
-                  <LogoMark className="w-48 h-48 sm:w-56 sm:h-56" alt={activeProduct.name} />
+                <div className="scale-150 transform group-hover:scale-[1.75] transition-transform duration-500">
+                  <Image
+                    src="/logo_aibolit.jpg"
+                    alt={activeProduct.name}
+                    width={144}
+                    height={144}
+                    className="w-36 h-36 object-cover rounded-full"
+                  />
                 </div>
               </div>
 
@@ -484,7 +643,7 @@ function CatalogPageContent({ params }: CatalogProps) {
                   <h1 className="text-xl sm:text-2xl font-black text-stone-900 font-comfortaa leading-tight mt-2">
                     {activeProduct.name}
                   </h1>
-
+                  
                   {/* Rating, reviews, and status info */}
                   <div className="flex items-center gap-4 text-xs font-medium text-stone-500 pt-1">
                     <div className="flex items-center gap-1 text-amber-400">
@@ -515,10 +674,11 @@ function CatalogPageContent({ params }: CatalogProps) {
                           <button
                             key={sz}
                             onClick={() => setUserSelectedSize({ prodId: activeProduct.id, size: sz })}
-                            className={`px-4 py-2 text-xs font-bold font-comfortaa rounded-xl border transition-all cursor-pointer ${isSel
-                              ? 'bg-stone-900 border-stone-900 text-white shadow-xs'
-                              : 'bg-stone-50 border-stone-200/50 text-stone-600 hover:bg-stone-100'
-                              }`}
+                            className={`px-4 py-2 text-xs font-bold font-comfortaa rounded-xl border transition-all cursor-pointer ${
+                              isSel 
+                                ? 'bg-stone-900 border-stone-900 text-white shadow-xs' 
+                                : 'bg-stone-50 border-stone-200/50 text-stone-600 hover:bg-stone-100'
+                            }`}
                           >
                             {sz}
                           </button>
@@ -578,8 +738,9 @@ function CatalogPageContent({ params }: CatalogProps) {
                     )}
                     <button
                       onClick={() => toggleFavorite(activeProduct.id)}
-                      className={`p-3.5 rounded-full border border-stone-200 transition-colors flex items-center justify-center cursor-pointer h-[52px] w-[52px] ${liked ? 'bg-red-50 border-red-200 text-red-500' : 'bg-white text-stone-500 hover:bg-stone-50'
-                        }`}
+                      className={`p-3.5 rounded-full border border-stone-200 transition-colors flex items-center justify-center cursor-pointer h-[52px] w-[52px] ${
+                        liked ? 'bg-red-50 border-red-200 text-red-500' : 'bg-white text-stone-500 hover:bg-stone-50'
+                      }`}
                     >
                       <Heart className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
                     </button>
@@ -618,7 +779,7 @@ function CatalogPageContent({ params }: CatalogProps) {
                     Уникальная рецептура бережно заботится о здоровье кожи и шерсти питомца благодаря оптимальному балансу жирных кислот Омега-3 и Омега-6. Хрустящие гранулы обеспечивают бережную механическую чистку зубов и профилактику зубного камня.
                   </p>
                 </div>
-
+                
                 <div className="bg-stone-50 rounded-2xl p-4 border border-stone-100 font-inter space-y-2.5 text-xs text-stone-600">
                   <span className="font-bold text-stone-800 block">Спецификация:</span>
                   <div className="flex justify-between border-b border-stone-200/50 pb-1.5">
@@ -673,8 +834,9 @@ function CatalogPageContent({ params }: CatalogProps) {
                           className="p-1 hover:scale-110 transition-transform cursor-pointer border-none bg-transparent"
                         >
                           <Star
-                            className={`w-8 h-8 ${isLit ? 'text-amber-400 fill-amber-400' : 'text-stone-300'
-                              } transition-colors`}
+                            className={`w-8 h-8 ${
+                              isLit ? 'text-amber-400 fill-amber-400' : 'text-stone-300'
+                            } transition-colors`}
                           />
                         </button>
                       );
@@ -728,14 +890,14 @@ function CatalogPageContent({ params }: CatalogProps) {
                 </div>
 
                 {/* Scroll container with no-scrollbar style */}
-                <div
+                <div 
                   ref={carouselRef}
                   className="flex gap-6 overflow-x-auto scrollbar-none pb-4 snap-x snap-mandatory scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0"
                   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                   {recentlyViewedProducts.map((p) => (
-                    <div
-                      key={p.id}
+                    <div 
+                      key={p.id} 
                       className="w-[280px] sm:w-[300px] flex-shrink-0 snap-start"
                     >
                       <ProductCard product={p} />
@@ -749,83 +911,152 @@ function CatalogPageContent({ params }: CatalogProps) {
         </main>
 
         {/* FOOTER */}
-        <footer className="bg-stone-900 text-stone-400 py-12 px-4 border-t border-stone-800">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-inter">
-            <div className="flex items-center gap-3">
-              <Logo className="w-10 h-10" isWhite={true} />
-            </div>
-            <p>© 2026 Сеть зоомаркетов «Айболит». Все права защищены. Лечебные лицензии сертифицированы ведомством ухода.</p>
-          </div>
-        </footer>
+        <Footer />
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAFA]">
-      <Navbar />
+    const currentHeroSlide = carouselSlides[currentSlide] || carouselSlides[0];
+    // Premium ease-out Quint
+    const heroSlideEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
+    const heroSlideDuration = shouldReduceMotion ? 0 : 0.65;
 
-      {/* SECTION 1: HERO BANNER (Clean, Playful, Left-Aligned Layout) */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/40 to-white pt-12 pb-16 md:py-24 px-4 sm:px-6 lg:px-8 border-b border-orange-100/40">
-        <div className="max-w-7xl mx-auto text-left space-y-8">
+    return (
+      <div className="flex flex-col min-h-screen bg-[#FAFAFA]">
+        <Navbar />
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 text-orange-650 px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold font-comfortaa"
+        {/* SECTION 1: HERO — full-bleed panel slide (фон + контент вместе) */}
+        <section
+          className="relative overflow-hidden -mt-[114px]"
+          aria-roledescription="carousel"
+          aria-label="Промо-баннер"
+        >
+          <div
+            ref={heroTrackRef}
+            className="relative h-[542px] sm:h-[594px] md:h-[634px] overflow-hidden"
           >
-            <span>Заботливый зоомаркет Айболит</span>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-black text-stone-900 font-comfortaa leading-[1.15] tracking-tight"
-          >
-            Все для здоровья <br className="hidden sm:inline" />
-            и счастья <span className="text-[#F97316] relative inline-block">
-              ваших лапок
-              <svg className="absolute left-0 bottom-1 w-full h-2 text-orange-400 opacity-60" viewBox="0 0 100 10" preserveAspectRatio="none">
-                <path d="M0,5 Q50,9 100,5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none" />
-              </svg>
-            </span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-base sm:text-lg md:text-xl text-stone-600 font-inter max-w-2xl leading-relaxed font-normal font-sans"
-          >
-            Отборные фермерские корма, сертифицированные витамины, средства ухода и развивающие интерактивные игрушки для ваших любимых питомцев.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-start justify-start gap-4 pt-2"
-          >
-            <a
-              href="#large-catalog"
-              className="w-full sm:w-auto px-8 py-4 bg-[#F97316] hover:bg-[#EA580C] text-white font-bold font-comfortaa text-center rounded-full shadow-md shadow-orange-500/10 hover:-translate-y-0.5 transition-all cursor-pointer"
+            <AnimatePresence
+              initial={false}
+              custom={heroAnimCustom}
+              onExitComplete={unlockHeroSlide}
             >
-              Листать каталог
-            </a>
-            <a
-              href="#promotions-area"
-              className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-stone-50 text-stone-850 font-bold font-comfortaa text-center rounded-full border border-stone-200 shadow-sm hover:-translate-y-0.5 transition-all text-sm flex items-center justify-center gap-2"
+              <motion.div
+                key={currentSlide}
+                custom={heroAnimCustom}
+                variants={{
+                  enter: ({ direction, offset }: { direction: number; offset: number }) => ({
+                    x: direction * offset,
+                  }),
+                  center: { x: 0 },
+                  exit: ({ direction, offset }: { direction: number; offset: number }) => ({
+                    x: direction * -offset,
+                  }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: heroSlideDuration, ease: heroSlideEase }}
+                className={`absolute inset-0 ${currentHeroSlide.bgClass} pt-[114px] ${
+                  isHeroSliding ? 'pointer-events-none' : ''
+                }`}
+              >
+                <div className="h-full py-6 md:py-10 px-4 sm:px-6 lg:px-8 flex items-center">
+                  <div className="max-w-7xl mx-auto px-6 md:px-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-center h-[380px] sm:h-[400px] md:h-[440px]">
+                    <div className="lg:col-span-7 space-y-4 md:space-y-5 text-left flex flex-col justify-center h-full">
+                      <div>
+                        <span className="inline-block bg-black/10 text-stone-900 font-extrabold font-comfortaa text-xs md:text-sm px-4 py-1.5 rounded-full uppercase tracking-wider">
+                          {currentHeroSlide.badge}
+                        </span>
+                      </div>
+
+                      <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-stone-900 font-comfortaa leading-[1.1] tracking-tight">
+                        {currentHeroSlide.title}
+                      </h1>
+
+                      <p className="text-base sm:text-lg text-stone-800 font-inter max-w-xl leading-relaxed font-medium">
+                        {currentHeroSlide.subtitle}
+                      </p>
+
+                      {currentHeroSlide.btnText && currentHeroSlide.link && (
+                        <div className="pt-1 flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateUrl({
+                                newSlug: currentHeroSlide.link!.slug,
+                                query: currentHeroSlide.link!.query,
+                                shouldScroll: true
+                              });
+                            }}
+                            className="px-8 py-3.5 bg-black hover:bg-stone-800 text-white font-black font-comfortaa text-sm md:text-base rounded-full shadow-md transition-all hover:scale-105 active:scale-95 flex items-center gap-3 group cursor-pointer"
+                          >
+                            <span>{currentHeroSlide.btnText}</span>
+                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="lg:col-span-5 flex justify-center lg:justify-end items-center h-full">
+                      {currentHeroSlide.illustration}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Controls поверх трека, ниже навбара */}
+          <div className="absolute inset-x-0 top-[114px] bottom-0 z-30 pointer-events-none">
+            <button
+              type="button"
+              onClick={handlePrevSlide}
+              disabled={isHeroSliding}
+              className="pointer-events-auto absolute left-2 sm:left-4 md:left-8 top-1/2 -translate-y-1/2 w-11 h-11 md:w-13 md:h-13 bg-black/90 hover:bg-stone-800 text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer group disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-default backdrop-blur-[2px]"
+              title="Предыдущий слайд"
+              aria-label="Предыдущий слайд"
             >
-              🎁 Акции недели со скидками
-            </a>
-          </motion.div>
+              <ChevronLeft className="w-6 h-6 stroke-[2.5] group-hover:-translate-x-0.5 transition-transform" />
+            </button>
 
-        </div>
-      </section>
+            <button
+              type="button"
+              onClick={handleNextSlide}
+              disabled={isHeroSliding}
+              className="pointer-events-auto absolute right-2 sm:right-4 md:right-8 top-1/2 -translate-y-1/2 w-11 h-11 md:w-13 md:h-13 bg-black/90 hover:bg-stone-800 text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer group disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-default backdrop-blur-[2px]"
+              title="Следующий слайд"
+              aria-label="Следующий слайд"
+            >
+              <ChevronRight className="w-6 h-6 stroke-[2.5] group-hover:translate-x-0.5 transition-transform" />
+            </button>
 
-      {/* SECTION 2: HOT WEEKLY OFFERS CAROUSEL */}
+            <div className="pointer-events-auto absolute inset-x-0 bottom-5 md:bottom-7 px-4 sm:px-6 lg:px-8">
+              <div className="max-w-7xl mx-auto px-6 md:px-12">
+                <div className="flex items-center gap-2">
+                  {carouselSlides.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleDotClick(idx)}
+                      disabled={isHeroSliding}
+                      className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer disabled:cursor-default ${
+                        idx === currentSlide
+                          ? 'w-10 bg-stone-900'
+                          : 'w-6 bg-stone-900/25 hover:bg-stone-900/45'
+                      }`}
+                      title={`Слайд ${idx + 1}`}
+                      aria-label={`Слайд ${idx + 1}`}
+                      aria-current={idx === currentSlide ? 'true' : undefined}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      {/* SECTION 2: HOT WEEKLY OFFERS CAROUSEL — временно отключено */}
+      {false && (
       <section id="promotions-area" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-8 border-b border-stone-100">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-1">
@@ -843,7 +1074,7 @@ function CatalogPageContent({ params }: CatalogProps) {
             </div>
             <div className="flex justify-between items-center pt-4 relative z-10">
               <span className="text-xl font-black font-comfortaa">Ownat & Mera</span>
-              <button
+              <button 
                 onClick={() => {
                   const targetAnimal = selectedAnimal === 'dog' ? 'dog' : 'cat';
                   updateUrl({
@@ -854,7 +1085,7 @@ function CatalogPageContent({ params }: CatalogProps) {
                 }}
                 className="p-3 bg-white hover:bg-orange-500 hover:text-white text-stone-950 rounded-full transition-all group/btn cursor-pointer"
               >
-                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
               </button>
             </div>
             {/* Absolute background patterns */}
@@ -865,14 +1096,14 @@ function CatalogPageContent({ params }: CatalogProps) {
             <div className="space-y-2 relative z-10">
               <span className="bg-white/20 text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full">Забота</span>
               <h3 className="text-lg md:text-xl font-bold font-comfortaa leading-snug pt-2">Бесплатная экспресс доставка от 1500₽</h3>
-              <p className="text-xs text-orange-50 font-inter font-light">Доставляем любые корма, тяжелые наполнители и ветаптеку прямо к вашей двери за 1 час!</p>
+              <p className="text-xs text-orange-50 font-inter font-light">Доставляем любые корма, тяжелые наполнители и ветаптеку прямо в коридор вашей квартиры за 1 час!</p>
             </div>
-            {/* <div className="flex justify-between items-center pt-4 relative z-10">
+            <div className="flex justify-between items-center pt-4 relative z-10">
               <span className="text-xl font-black font-comfortaa">Айболит Экспресс</span>
               <Link href="/cart" className="p-3 bg-white text-orange-600 hover:bg-orange-50 hover:scale-105 rounded-full transition-all flex items-center justify-center">
                 <Truck className="w-4 h-4" />
               </Link>
-            </div> */}
+            </div>
           </div>
 
           <div className="bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white p-6 rounded-[28px] relative overflow-hidden flex flex-col justify-between shadow-lg h-72">
@@ -881,9 +1112,9 @@ function CatalogPageContent({ params }: CatalogProps) {
               <h3 className="text-lg md:text-xl font-bold font-comfortaa leading-snug pt-2">Защита от паразитов до -20%</h3>
               <p className="text-xs text-sky-100 font-inter font-light">Брендовые ошейники Foresto, капли на холку Inspector и капли Elanco для мелких и крупных пород собак.</p>
             </div>
-            <div className="flex justify-end items-center pt-4 relative z-10">
-              {/* <span className="text-xl font-black font-comfortaa">Паразитология 🔬</span> */}
-              <button
+            <div className="flex justify-between items-center pt-4 relative z-10">
+              <span className="text-xl font-black font-comfortaa">Паразитология 🔬</span>
+              <button 
                 onClick={() => {
                   const targetAnimal = selectedAnimal === 'dog' ? 'dog' : 'cat';
                   updateUrl({
@@ -892,9 +1123,9 @@ function CatalogPageContent({ params }: CatalogProps) {
                     shouldScroll: true
                   });
                 }}
-                className="p-3 bg-white hover:bg-orange-500 hover:text-white text-stone-950 rounded-full transition-all group/btn cursor-pointer"
+                className="p-3 bg-white text-[#0284C7] hover:bg-orange-50 hover:scale-105 rounded-full transition-all flex items-center justify-center cursor-pointer"
               >
-                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -906,34 +1137,36 @@ function CatalogPageContent({ params }: CatalogProps) {
             <div className="relative overflow-hidden rounded-[32px] shadow-xl h-[420px] sm:h-[320px]">
               <AnimatePresence initial={false}>
                 <motion.div
-                  key={currentSlide}
+                  key={lowerSlide}
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '-100%' }}
                   transition={{ type: "tween", ease: "easeInOut", duration: 0.55 }}
-                  className={`absolute inset-0 w-full h-full bg-gradient-to-br ${carouselSlides[currentSlide].bgGradient} text-white p-6 sm:p-8 md:p-12 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 overflow-hidden`}
+                  className={`absolute inset-0 w-full h-full bg-gradient-to-br ${carouselSlides[lowerSlide].bgGradient} text-white p-6 sm:p-8 md:p-12 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 overflow-hidden`}
                 >
                   <div className="space-y-3 sm:space-y-4 max-w-xl text-left relative z-10 flex flex-col justify-center h-full">
                     <h3 className="text-lg sm:text-2xl md:text-3xl font-black font-comfortaa leading-tight pt-1">
-                      {carouselSlides[currentSlide].title}
+                      {carouselSlides[lowerSlide].title}
                     </h3>
                     <p className="text-xs sm:text-sm text-stone-100/90 font-inter font-light leading-relaxed max-w-xl">
-                      {carouselSlides[currentSlide].subtitle}
+                      {carouselSlides[lowerSlide].subtitle}
                     </p>
-                    <button
-                      onClick={() => updateUrl({
-                        newSlug: carouselSlides[currentSlide].link.slug,
-                        query: carouselSlides[currentSlide].link.query,
-                        shouldScroll: true
-                      })}
-                      className="mt-1 px-6 py-2.5 bg-white hover:bg-orange-500 text-stone-900 hover:text-white font-extrabold font-comfortaa text-xs rounded-full shadow-md hover:-translate-y-0.5 transition-all w-max cursor-pointer border-0 outline-none block"
-                    >
-                      Подробнее ⚡
-                    </button>
+                    {carouselSlides[lowerSlide].link && (
+                      <button
+                        onClick={() => updateUrl({
+                          newSlug: carouselSlides[lowerSlide].link!.slug,
+                          query: carouselSlides[lowerSlide].link!.query,
+                          shouldScroll: true
+                        })}
+                        className="mt-1 px-6 py-2.5 bg-white hover:bg-orange-500 text-stone-900 hover:text-white font-extrabold font-comfortaa text-xs rounded-full shadow-md hover:-translate-y-0.5 transition-all w-max cursor-pointer border-0 outline-none block"
+                      >
+                        Подробнее ⚡
+                      </button>
+                    )}
                   </div>
-
+                  
                   <div className="absolute right-4 bottom-4 opacity-15 sm:relative sm:opacity-90 sm:right-0 sm:bottom-0 shrink-0 w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44 flex items-center justify-center">
-                    {carouselSlides[currentSlide].illustration}
+                    {carouselSlides[lowerSlide].illustration}
                   </div>
                 </motion.div>
               </AnimatePresence>
@@ -942,56 +1175,75 @@ function CatalogPageContent({ params }: CatalogProps) {
             {/* Carousel Navigation Dots */}
             <div className="flex items-center justify-center gap-2.5">
               {carouselSlides.map((_, idx) => {
-                const isActive = idx === currentSlide;
+                const isActive = idx === lowerSlide;
                 return (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => handleDotClick(idx)}
-                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer border-0 outline-none ${isActive ? 'w-8 bg-orange-500 shadow-sm' : 'w-2.5 bg-stone-300 hover:bg-stone-400'
-                      }`}
+                    onClick={() => setLowerSlide(idx)}
+                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer border-0 outline-none ${
+                      isActive ? 'w-8 bg-orange-500 shadow-sm' : 'w-2.5 bg-stone-300 hover:bg-stone-400'
+                    }`}
                     aria-label={`Слайд ${idx + 1}`}
                   />
                 );
               })}
             </div>
           </div>
-        )
-        }
-      </section >
+        )}
+      </section>
+      )}
 
-      {/* SECTION 3: THE MAIN INTERACTIVE CATALOG AREA */}
-      < section id="large-catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-8" >
+      {/* SECTION 3: THE MAIN INTERACTIVE VIRTUALIZED CATALOG AREA */}
+      {slug.length <= 1 && !isSearchActive ? (
+        <section id="large-catalog" className="py-6 space-y-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl font-black text-stone-900 font-comfortaa tracking-tight">
+              Каталог товаров зоомаркета 🐾
+            </h2>
+          </div>
 
-        {/* Title area */}
-        < div className="flex flex-col gap-3.5 border-b border-stone-150 pb-5" >
+          <VirtualizedCatalogContainer
+            selectedAnimal={slug[0] || 'all'}
+            onSelectSubcategory={(subId, categoryId, subSection) => {
+              if (subId === 'all') {
+                updateUrl({ newSlug: [categoryId] });
+              } else if (subSection) {
+                updateUrl({ newSlug: [categoryId, subId, subSection] });
+              } else {
+                updateUrl({ newSlug: [categoryId, subId] });
+              }
+            }}
+          />
+        </section>
+      ) : (
+        <section id="large-catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-8">
+          
+          {/* Title area */}
+        <div className="flex flex-col gap-3.5 border-b border-stone-150 pb-5">
           {/* Active Breadcrumbs (Task 3 URL level visualization) */}
-          < div className="flex items-center flex-wrap gap-1.5 text-xs text-stone-500 font-comfortaa bg-stone-100 px-3 py-1.5 rounded-full border border-stone-200 w-fit" >
-            <button onClick={() => updateUrl({ newSlug: [], query: { search: null, priceMin: null, priceMax: null, brands: null, onSale: null, badge: null } })} className="hover:text-orange-500 font-bold bg-transparent border-none p-0 cursor-pointer">
-              Каталог
-            </button>
-            {
-              slug.length >= 1 && (
+          {slug.length > 0 && (
+            <div className="flex items-center flex-wrap gap-1.5 text-xs text-stone-500 font-comfortaa bg-stone-100 px-3 py-1.5 rounded-full border border-stone-200 w-fit">
+              {slug.length >= 1 && (
+                <button onClick={() => updateUrl({ newSlug: [slug[0]], query: { search: null, priceMin: null, priceMax: null, brands: null, onSale: null, badge: null } })} className="hover:text-orange-500 font-bold capitalize bg-transparent border-none p-0 cursor-pointer">
+                  {isBrandsCatalog ? 'Бренды' : (CATALOG_STRUCTURE[slug[0]]?.name || slug[0])}
+                </button>
+              )}
+              {isBrandsCatalog && activeBrandName && (
                 <>
                   <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
-                  <button onClick={() => updateUrl({ newSlug: [slug[0]], query: { search: null, priceMin: null, priceMax: null, brands: null, onSale: null, badge: null } })} className="hover:text-orange-500 font-bold capitalize bg-transparent border-none p-0 cursor-pointer">
-                    {CATALOG_STRUCTURE[slug[0]]?.name || slug[0]}
-                  </button>
+                  <span className="font-semibold text-orange-500">{activeBrandName}</span>
                 </>
-              )
-            }
-            {
-              slug.length >= 2 && (
+              )}
+              {!isBrandsCatalog && slug.length >= 2 && (
                 <>
                   <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
                   <button onClick={() => updateUrl({ newSlug: [slug[0], slug[1]], query: { search: null, priceMin: null, priceMax: null, brands: null, onSale: null, badge: null } })} className="hover:text-orange-500 font-bold bg-transparent border-none p-0 cursor-pointer">
                     {activeSubcategory?.name || slug[1]}
                   </button>
                 </>
-              )
-            }
-            {
-              slug.length >= 3 && (
+              )}
+              {!isBrandsCatalog && slug.length >= 3 && (
                 <>
                   <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
                   {slug.length === 3 ? (
@@ -1002,23 +1254,21 @@ function CatalogPageContent({ params }: CatalogProps) {
                     </button>
                   )}
                 </>
-              )
-            }
-            {
-              slug.length >= 4 && (
+              )}
+              {!isBrandsCatalog && slug.length >= 4 && (
                 <>
                   <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
                   <span className="font-semibold text-orange-500 max-w-[140px] truncate">{activeProduct?.name || slug[3]}</span>
                 </>
-              )
-            }
-          </div >
+              )}
+            </div>
+          )}
 
           <div className="space-y-1">
             <h2 className="text-2xl sm:text-3xl font-black text-stone-900 font-comfortaa tracking-tight">
               {(() => {
                 const animalName = CATALOG_STRUCTURE[selectedAnimal]?.name;
-
+                
                 let targetAnimal = 'питомцев';
                 if (selectedAnimal === 'cat') targetAnimal = 'кошек';
                 else if (selectedAnimal === 'dog') targetAnimal = 'собак';
@@ -1027,9 +1277,15 @@ function CatalogPageContent({ params }: CatalogProps) {
                 else if (selectedAnimal === 'fish') targetAnimal = 'рыб';
 
                 if (slug.length === 0) {
-                  return searchParamValue
-                    ? `Результаты поиска по запросу «${searchParamValue}»`
+                  return searchParamValue 
+                    ? `Результаты поиска по запросу «${searchParamValue}»` 
                     : 'Каталог товаров зоомаркета';
+                }
+                if (isBrandsCatalog) {
+                  if (activeBrandName) {
+                    return `Товары бренда ${activeBrandName}`;
+                  }
+                  return 'Бренды';
                 }
                 if (slug.length === 1) {
                   return `Товары для ${targetAnimal}`;
@@ -1047,267 +1303,118 @@ function CatalogPageContent({ params }: CatalogProps) {
               })()}
             </h2>
           </div>
-        </div >
+        </div>
 
         {/* Catalog core structure wrapper */}
-        < div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" >
-
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
           {/* Left Sidebar (Animal selection and Subcategories, 3 columns width) */}
-          {
-            slug.length < 4 && (
-              <aside className="lg:col-span-3 space-y-6">
+          {slug.length < 4 && (
+            <aside className="lg:col-span-3 space-y-6">
+            
+            {/* Level 3: Seamless Filters Sidebar */}
+            {true && (
+              <div className="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-xs space-y-6">
+                {/* Seamless Divider & Filters */}
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center pb-1">
+                    <span className="text-sm font-bold font-comfortaa text-stone-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <Filter className="w-4 h-4 text-stone-500" />
+                      <span>Фильтры поиска</span>
+                    </span>
+                    {(priceMin || priceMax || selectedBrands.length > 0 || onSaleOnly || badgeFilterOnly) && (
+                      <button 
+                        type="button"
+                        onClick={handleClearFilters}
+                        className="text-xs font-bold text-red-500 hover:text-red-700 font-comfortaa uppercase tracking-wider cursor-pointer bg-transparent border-0"
+                      >
+                        Сбросить
+                      </button>
+                    )}
+                  </div>
 
-                {/* Level 1: Root Sidebar (when slug is empty) */}
-                {slug.length === 0 && !isSearchActive && (
-                  <div className="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-xs space-y-6">
-                    <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
-                      <span className="text-base md:text-lg font-black font-comfortaa text-stone-900 uppercase tracking-wider">
-                        Каталог
-                      </span>
+                  {/* Sale/Recommended filter */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-stone-400 uppercase tracking-widest block font-comfortaa">Полезные свойства</label>
+                    
+                    <div className="space-y-1.5 font-inter">
+                      <button
+                        type="button"
+                        onClick={() => updateUrl({ query: { onSale: onSaleOnly ? null : 'true' } })}
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-xs md:text-sm font-semibold cursor-pointer transition-all border-0 ${
+                          onSaleOnly ? 'bg-orange-500/10 text-orange-650 font-bold' : 'bg-transparent text-stone-700 hover:bg-stone-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Percent className="w-4 h-4 opacity-75" />
+                          <span>Только со скидкой</span>
+                        </div>
+                        <span className="bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full text-[10px] font-mono">{onSaleCount}</span>
+                      </button>
                     </div>
+                  </div>
 
-                    <div className="space-y-6">
-                      {(Object.keys(CATALOG_STRUCTURE) as PetType[]).map((animalKey) => {
-                        const animal = CATALOG_STRUCTURE[animalKey];
+                  {/* Price filter */}
+                  <div className="space-y-2.5">
+                    <label className="text-xs font-bold text-stone-400 uppercase tracking-widest block font-comfortaa">Диапазон цены (₽)</label>
+                    <div className="grid grid-cols-2 gap-2 font-mono">
+                      <input
+                        type="number"
+                        value={priceMin}
+                        onChange={(e) => updateUrl({ query: { priceMin: e.target.value } })}
+                        placeholder="От"
+                        className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs md:text-sm focus:outline-none focus:border-orange-500 font-medium"
+                      />
+                      <input
+                        type="number"
+                        value={priceMax}
+                        onChange={(e) => updateUrl({ query: { priceMax: e.target.value } })}
+                        placeholder="До"
+                        className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs md:text-sm focus:outline-none focus:border-orange-500 font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Brands filter */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold text-stone-400 uppercase tracking-widest block font-comfortaa">Бренды производители</label>
+                    
+                    <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                      {availableBrandsInSubcategory.map((brand) => {
+                        const isSelected = selectedBrands.includes(brand.name);
                         return (
-                          <div key={animalKey} className="space-y-3">
-                            <div
-                              onClick={() => updateUrl({ newSlug: [animalKey] })}
-                              className="flex items-center justify-between group cursor-pointer border-b border-stone-100 pb-2"
-                            >
-                              <div className="text-sm md:text-base font-extrabold font-comfortaa text-stone-900 group-hover:text-orange-500 transition-colors uppercase tracking-wider flex items-center">
-                                <span>{animal.name}</span>
+                          <button
+                            key={brand.name}
+                            type="button"
+                            onClick={() => toggleBrandFilter(brand.name)}
+                            className={`w-full flex items-center justify-between p-2 rounded-xl text-xs md:text-sm font-semibold cursor-pointer transition-all border-0 ${
+                              isSelected ? 'bg-orange-500/10 text-orange-650 font-bold' : 'bg-transparent text-stone-600 hover:bg-stone-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center transition-all ${
+                                isSelected ? 'bg-orange-500 border-orange-500 text-white' : 'border-stone-300 bg-white'
+                              }`}>
+                                {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                               </div>
-                              <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all" />
+                              <span>{brand.name}</span>
                             </div>
-
-                            <div className="pl-3.5 border-l border-stone-200/80 space-y-2.5 flex flex-col">
-                              {(showAllSubcategories[animalKey] ? animal.subcategories : animal.subcategories.slice(0, 5)).map((sub) => (
-                                <button
-                                  key={sub.id}
-                                  type="button"
-                                  onClick={() => updateUrl({ newSlug: [animalKey, sub.id] })}
-                                  className="text-xs md:text-sm font-semibold transition-colors text-left font-comfortaa cursor-pointer bg-transparent border-0 p-0 w-full text-stone-600 hover:text-orange-500 block leading-snug"
-                                >
-                                  {sub.name}
-                                </button>
-                              ))}
-
-                              {animal.subcategories.length > 5 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setShowAllSubcategories(prev => ({ ...prev, [animalKey]: !prev[animalKey] }))}
-                                  className="text-xs font-bold text-orange-500 hover:text-orange-650 transition-colors text-left font-comfortaa cursor-pointer bg-transparent border-0 p-0 w-full flex items-center gap-1 mt-0.5"
-                                >
-                                  <span>{showAllSubcategories[animalKey] ? 'Скрыть' : 'Показать все'}</span>
-                                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllSubcategories[animalKey] ? 'rotate-180' : ''}`} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
+                            <span className="text-[10px] text-stone-400 font-mono">({brand.count})</span>
+                          </button>
                         );
                       })}
                     </div>
                   </div>
-                )}
+                </div>
+              </div>
+            )}
 
-                {/* Level 2 & 3: Animal Group Sidebar (when slug has length === 1) */}
-                {slug.length === 1 && !isSearchActive && (
-                  <div className="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-xs space-y-6">
-                    <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
-                      <span className="text-base md:text-lg font-black font-comfortaa text-stone-900 uppercase tracking-wider">
-                        {CATALOG_STRUCTURE[selectedAnimal]?.name}
-                      </span>
-                      <button
-                        onClick={() => updateUrl({ newSlug: [] })}
-                        className="text-xs font-bold text-orange-500 hover:text-orange-600 font-comfortaa cursor-pointer bg-transparent border-0"
-                      >
-                        Все питомцы
-                      </button>
-                    </div>
-
-                    <div className="space-y-6">
-                      {CATALOG_STRUCTURE[selectedAnimal]?.subcategories.map((sub) => (
-                        <div key={sub.id} className="space-y-2">
-                          <button
-                            type="button"
-                            onClick={() => updateUrl({ newSlug: [selectedAnimal, sub.id] })}
-                            className={`text-sm md:text-base font-extrabold font-comfortaa hover:text-orange-500 transition-colors uppercase tracking-wider text-left block cursor-pointer bg-transparent border-0 p-0 w-full ${activeSubcategoryId === sub.id ? 'text-orange-500 font-black' : 'text-stone-900'
-                              }`}
-                          >
-                            {sub.name}
-                          </button>
-
-                          <div className="pl-3 border-l border-stone-200 space-y-2 flex flex-col">
-                            {sub.subSections.map((sec) => {
-                              const isActiveSec = activeSubSection === sec && activeSubcategoryId === sub.id;
-                              return (
-                                <button
-                                  key={sec}
-                                  type="button"
-                                  onClick={() => updateUrl({ newSlug: [selectedAnimal, sub.id, sec] })}
-                                  className={`text-xs md:text-sm font-semibold transition-colors text-left font-comfortaa cursor-pointer bg-transparent border-0 p-0 w-full ${isActiveSec ? 'text-orange-500 font-extrabold' : 'text-stone-500 hover:text-orange-500'
-                                    }`}
-                                >
-                                  {sec}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Level 3: Seamless Subsections & Filters Sidebar (when slug has length >= 2 or search is active) */}
-                {(slug.length >= 2 || isSearchActive) && (
-                  <div className="bg-white border border-stone-200/80 rounded-3xl p-5 shadow-xs space-y-6">
-                    {/* Subsections list block navigation */}
-                    {slug.length >= 2 && (
-                      <div className="space-y-4">
-                        <div className="border-b border-stone-100 pb-3 flex items-center">
-                          <button
-                            type="button"
-                            onClick={() => updateUrl({ newSlug: [selectedAnimal] })}
-                            className="inline-flex items-center gap-1.5 text-sm font-bold font-comfortaa text-stone-500 hover:text-stone-900 group cursor-pointer bg-transparent border-0 p-0 outline-none"
-                          >
-                            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-                            <span>Назад в &ldquo;{CATALOG_STRUCTURE[selectedAnimal]?.name || 'раздел'}&rdquo;</span>
-                          </button>
-                        </div>
-
-                        <div className="space-y-1">
-                          <button
-                            type="button"
-                            onClick={() => updateUrl({ newSlug: [selectedAnimal, activeSubcategoryId!] })}
-                            className={`w-full text-left p-2.5 rounded-xl text-xs md:text-sm font-bold font-comfortaa flex items-center justify-between transition-all cursor-pointer border-0 outline-none ${activeSubSection === 'all'
-                              ? 'bg-orange-500/10 text-orange-650'
-                              : 'bg-transparent text-stone-600 hover:bg-stone-50'
-                              }`}
-                          >
-                            <span>Все разделы</span>
-                            <ChevronRight className="w-3.5 h-3.5 opacity-55" />
-                          </button>
-                          {activeSubcategory?.subSections.map((sec) => {
-                            const isSel = activeSubSection === sec;
-                            return (
-                              <button
-                                key={sec}
-                                type="button"
-                                onClick={() => updateUrl({ newSlug: [selectedAnimal, activeSubcategoryId!, sec] })}
-                                className={`w-full text-left p-2.5 rounded-xl text-xs md:text-sm font-bold font-comfortaa flex items-center justify-between transition-all cursor-pointer border-0 outline-none ${isSel
-                                  ? 'bg-orange-500 text-white shadow-xs font-extrabold'
-                                  : 'bg-transparent text-stone-600 hover:bg-stone-50'
-                                  }`}
-                              >
-                                <span>{sec}</span>
-                                <ChevronRight className="w-3.5 h-3.5 opacity-55" />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Seamless Divider & Filters */}
-                    <div className={`${slug.length >= 2 ? 'border-t border-stone-100 pt-5' : ''} space-y-6`}>
-                      <div className="flex justify-between items-center pb-1">
-                        <span className="text-sm font-bold font-comfortaa text-stone-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <Filter className="w-4 h-4 text-stone-500" />
-                          <span>Фильтры поиска</span>
-                        </span>
-                        {(priceMin || priceMax || selectedBrands.length > 0 || onSaleOnly || badgeFilterOnly) && (
-                          <button
-                            type="button"
-                            onClick={handleClearFilters}
-                            className="text-xs font-bold text-red-500 hover:text-red-700 font-comfortaa uppercase tracking-wider cursor-pointer bg-transparent border-0"
-                          >
-                            Сбросить
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Sale/Recommended filter */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-stone-400 uppercase tracking-widest block font-comfortaa">Полезные свойства</label>
-
-                        <div className="space-y-1.5 font-inter">
-                          <button
-                            type="button"
-                            onClick={() => updateUrl({ query: { onSale: onSaleOnly ? null : 'true' } })}
-                            className={`w-full flex items-center justify-between p-2 rounded-xl text-xs md:text-sm font-semibold cursor-pointer transition-all border-0 ${onSaleOnly ? 'bg-orange-500/10 text-orange-650 font-bold' : 'bg-transparent text-stone-700 hover:bg-stone-50'
-                              }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Percent className="w-4 h-4 opacity-75" />
-                              <span>Только со скидкой</span>
-                            </div>
-                            <span className="bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full text-[10px] font-mono">{onSaleCount}</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Price filter */}
-                      <div className="space-y-2.5">
-                        <label className="text-xs font-bold text-stone-400 uppercase tracking-widest block font-comfortaa">Диапазон цены (₽)</label>
-                        <div className="grid grid-cols-2 gap-2 font-mono">
-                          <input
-                            type="number"
-                            value={priceMin}
-                            onChange={(e) => updateUrl({ query: { priceMin: e.target.value } })}
-                            placeholder="От"
-                            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs md:text-sm focus:outline-none focus:border-orange-500 font-medium"
-                          />
-                          <input
-                            type="number"
-                            value={priceMax}
-                            onChange={(e) => updateUrl({ query: { priceMax: e.target.value } })}
-                            placeholder="До"
-                            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs md:text-sm focus:outline-none focus:border-orange-500 font-medium"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Brands filter */}
-                      <div className="space-y-3">
-                        <label className="text-xs font-bold text-stone-400 uppercase tracking-widest block font-comfortaa">Бренды производители</label>
-
-                        <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
-                          {availableBrandsInSubcategory.map((brand) => {
-                            const isSelected = selectedBrands.includes(brand.name);
-                            return (
-                              <button
-                                key={brand.name}
-                                type="button"
-                                onClick={() => toggleBrandFilter(brand.name)}
-                                className={`w-full flex items-center justify-between p-2 rounded-xl text-xs md:text-sm font-semibold cursor-pointer transition-all border-0 ${isSelected ? 'bg-orange-500/10 text-orange-650 font-bold' : 'bg-transparent text-stone-600 hover:bg-stone-50'
-                                  }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center transition-all ${isSelected ? 'bg-orange-500 border-orange-500 text-white' : 'border-stone-300 bg-white'
-                                    }`}>
-                                    {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                                  </div>
-                                  <span>{brand.name}</span>
-                                </div>
-                                <span className="text-[10px] text-stone-400 font-mono">({brand.count})</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-              </aside>
-            )
-          }
+          </aside>
+        )}
 
           {/* Right Product Grid Column / Product Detail Page */}
           <div className={`${slug.length === 4 ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-6`}>
-
+            
             <AnimatePresence mode="wait">
               {/* --- LEVEL 1: ROOT CATALOG OVERVIEW --- */}
               {slug.length === 0 && !isSearchActive && (
@@ -1323,7 +1430,7 @@ function CatalogPageContent({ params }: CatalogProps) {
                     return (
                       <div key={animalKey} className="space-y-4">
                         {/* Header block */}
-                        <div
+                        <div 
                           onClick={() => {
                             updateUrl({ newSlug: [animalKey] });
                           }}
@@ -1351,10 +1458,10 @@ function CatalogPageContent({ params }: CatalogProps) {
                               }}
                               className="bg-white border border-stone-200/80 rounded-2xl p-5 hover:border-orange-500 hover:shadow-md transition-all cursor-pointer flex flex-col items-center justify-between text-center gap-3 group h-44 relative overflow-hidden"
                             >
-                              <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform p-1">
-                                <LogoMark className="w-full h-full" alt={subcat.name} />
+                              <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                                {renderCategoryIllustration(subcat.id)}
                               </div>
-
+                              
                               <span className="text-[11px] font-extrabold font-comfortaa text-stone-800 group-hover:text-orange-500 transition-colors leading-tight line-clamp-2">
                                 {subcat.name}
                               </span>
@@ -1380,7 +1487,7 @@ function CatalogPageContent({ params }: CatalogProps) {
                     return (
                       <div key={subcat.id} className="space-y-4">
                         {/* Header block */}
-                        <div
+                        <div 
                           onClick={() => {
                             updateUrl({ newSlug: [selectedAnimal, subcat.id] });
                           }}
@@ -1408,10 +1515,10 @@ function CatalogPageContent({ params }: CatalogProps) {
                               }}
                               className="bg-white border border-stone-200/80 rounded-2xl p-5 hover:border-orange-500 hover:shadow-md transition-all cursor-pointer flex flex-col items-center justify-between text-center gap-3 group h-44 relative overflow-hidden"
                             >
-                              <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform p-1">
-                                <LogoMark className="w-full h-full" alt={sec} />
+                              <div className="w-14 h-14 bg-stone-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                                {renderCategoryIllustration(subcat.id)}
                               </div>
-
+                              
                               <span className="text-[11px] font-extrabold font-comfortaa text-stone-800 group-hover:text-orange-500 transition-colors leading-tight line-clamp-2">
                                 {sec}
                               </span>
@@ -1434,6 +1541,37 @@ function CatalogPageContent({ params }: CatalogProps) {
                   className="space-y-6"
                 >
 
+                  {/* Horizontal Pills for Subcategory Navigation */}
+                  {slug.length >= 2 && activeSubcategory && !isSearchActive && (
+                    <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:mx-0 sm:px-0">
+                      <button
+                        onClick={() => updateUrl({ newSlug: [selectedAnimal, activeSubcategoryId!] })}
+                        className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold font-comfortaa transition-all border cursor-pointer ${
+                          activeSubSection === 'all'
+                            ? 'bg-stone-900 border-stone-900 text-white shadow-xs'
+                            : 'bg-white border-stone-200 text-stone-600 hover:border-orange-500 hover:text-orange-500'
+                        }`}
+                      >
+                        {getAllCategoryPillLabel(activeSubcategory.name)}
+                      </button>
+                      {activeSubcategory.subSections.map((sec) => {
+                        const isSel = activeSubSection === sec;
+                        return (
+                          <button
+                            key={sec}
+                            onClick={() => updateUrl({ newSlug: [selectedAnimal, activeSubcategoryId!, sec] })}
+                            className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold font-comfortaa transition-all border cursor-pointer ${
+                              isSel
+                                ? 'bg-stone-900 border-stone-900 text-white shadow-xs'
+                                : 'bg-white border-stone-200 text-stone-600 hover:border-orange-500 hover:text-orange-500'
+                            }`}
+                          >
+                            {sec}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Dynamic Sorting header bar */}
                   <div className="flex justify-between items-center text-xs py-2 border-b border-stone-100/60 pb-3">
@@ -1463,7 +1601,7 @@ function CatalogPageContent({ params }: CatalogProps) {
                   ) : categoryBaseProducts.length === 0 ? (
                     <div className="max-w-md mx-auto text-center py-16 space-y-4">
                       <span className="text-4xl">🐾</span>
-                      <h3 className="text-lg font-bold font-comfortaa text-stone-900">Раздел в наполнении</h3>
+                      <h3 className="text-lg font-bold font-comfortaa text-stone-900">Раздел наполнении</h3>
                       <p className="text-xs text-stone-500 leading-normal">
                         В этой категории пока нет товаров. Мы уже работаем над расширением нашего каталога и скоро завезем качественные новинки для ваших любимцев!
                       </p>
@@ -1471,7 +1609,7 @@ function CatalogPageContent({ params }: CatalogProps) {
                         onClick={() => updateUrl({ newSlug: [selectedAnimal] })}
                         className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold font-comfortaa rounded-full text-xs transition-all cursor-pointer shadow-sm shadow-orange-500/10"
                       >
-                        Вернуться к питомцу
+                        {isBrandsCatalog ? 'Вернуться к брендам' : 'Вернуться к питомцу'}
                       </button>
                     </div>
                   ) : filteredProducts.length === 0 ? (
@@ -1504,20 +1642,14 @@ function CatalogPageContent({ params }: CatalogProps) {
 
           </div>
 
-        </div >
+        </div>
 
-      </section >
+      </section>
+      )}
 
       {/* FOOTER */}
-      < footer className="bg-stone-900 text-stone-400 py-12 px-4 border-t border-stone-800" >
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-xs font-inter">
-          <div className="flex items-center gap-3">
-            <Logo className="w-10 h-10" isWhite={true} />
-          </div>
-          <p>© 2026 Сеть зоомаркетов «Айболит». Все права защищены. Лечебные лицензии сертифицированы ведомством ухода.</p>
-        </div>
-      </footer >
-    </div >
+      <Footer />
+    </div>
   );
 }
 

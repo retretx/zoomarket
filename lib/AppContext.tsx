@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { MOCK_PRODUCTS } from './data';
+import type { Product } from '@/components/ProductCard';
+import CartToast from '@/components/CartToast';
 
 export interface CartItem {
   id: string;
@@ -22,9 +24,19 @@ export interface UserProfile {
   address?: string;
 }
 
+export interface ToastData {
+  product: Product;
+  recommendation: Product | null;
+}
+
+export interface AddToCartOptions {
+  /** Не показывать CartToast (например, при добавлении уже со страницы корзины) */
+  silent?: boolean;
+}
+
 interface AppContextType {
   cart: CartItem[];
-  addToCart: (product: any, size?: string) => void;
+  addToCart: (product: any, size?: string, options?: AddToCartOptions) => void;
   removeFromCart: (id: string, size?: string) => void;
   updateQty: (id: string, delta: number, size?: string) => void;
   clearCart: () => void;
@@ -43,6 +55,33 @@ interface AppContextType {
   setPickupAddress: (address: string) => void;
   productRatings: Record<string, { rating: number; reviews: number; userRating?: number }>;
   submitProductRating: (productId: string, rating: number) => void;
+  toastData: ToastData | null;
+  dismissToast: () => void;
+  pauseToastTimer: () => void;
+  resumeToastTimer: () => void;
+}
+
+const TOAST_DURATION_MS = 7000;
+
+function findRecommendation(
+  product: Product,
+  excludeIds: string[] = [],
+  cartProductIds: string[] = []
+): Product | null {
+  const excluded = new Set([product.id, ...excludeIds, ...cartProductIds]);
+  const candidates = MOCK_PRODUCTS.filter(
+    (p) => p.animal === product.animal && !excluded.has(p.id) && p.inStock !== false
+  );
+
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function resolveProduct(product: any): Product | null {
+  if (product?.animal && product?.type && product?.name) {
+    return product as Product;
+  }
+  return MOCK_PRODUCTS.find((p) => p.id === product?.id) ?? null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -88,6 +127,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [pickupAddress, setPickupAddress] = useState('ул. Ленина, д. 12 (м. Площадь Ленина, Зоомаркет Айболит)');
   const [productRatings, setProductRatings] = useState<Record<string, { rating: number; reviews: number; userRating?: number }>>({});
   const [isLoaded, setIsLoaded] = useState(false);
+  const [toastData, setToastData] = useState<ToastData | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastToastProductIdRef = useRef<string | null>(null);
+  const toastVisibleRef = useRef(false);
+  const toastPausedRef = useRef(false);
 
   // Hydration from localStorage
   useEffect(() => {
@@ -167,30 +211,121 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('aibolit_pickup_address', pickupAddress);
   }, [pickupAddress, isLoaded]);
 
-  const addToCart = (product: any, size?: string) => {
-    setCart(prev => {
-      // Find matching item by ID and size
-      const existingIndex = prev.findIndex(item => item.id === product.id && item.size === size);
-      if (existingIndex > -1) {
-        return prev.map((item, idx) => 
-          idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [
-        ...prev,
-        {
-          id: product.id,
-          name: product.name,
-          category: product.category || 'Товары',
-          price: product.price,
-          oldPrice: product.oldPrice,
-          quantity: 1,
-          imageType: product.type || 'food',
-          size: size || (product.sizes?.[0] || undefined)
-        }
-      ];
+  const clearToastTimer = useCallback(() => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleToastDismiss = useCallback(() => {
+    clearToastTimer();
+    toastTimerRef.current = setTimeout(() => {
+      lastToastProductIdRef.current = null;
+      toastVisibleRef.current = false;
+      toastPausedRef.current = false;
+      setToastData(null);
+      toastTimerRef.current = null;
+    }, TOAST_DURATION_MS);
+  }, [clearToastTimer]);
+
+  const dismissToast = useCallback(() => {
+    clearToastTimer();
+    lastToastProductIdRef.current = null;
+    toastVisibleRef.current = false;
+    toastPausedRef.current = false;
+    setToastData(null);
+  }, [clearToastTimer]);
+
+  const pauseToastTimer = useCallback(() => {
+    // Игнор hover на пустом wrapper, когда тоста нет
+    if (!toastVisibleRef.current) return;
+    toastPausedRef.current = true;
+    clearToastTimer();
+  }, [clearToastTimer]);
+
+  const resumeToastTimer = useCallback(() => {
+    if (!toastPausedRef.current) return;
+    toastPausedRef.current = false;
+    if (!toastVisibleRef.current) return;
+    scheduleToastDismiss();
+  }, [scheduleToastDismiss]);
+
+  const showCartToast = useCallback((
+    product: Product,
+    excludeIds: string[] = [],
+    cartProductIds: string[] = []
+  ) => {
+    clearToastTimer();
+    lastToastProductIdRef.current = product.id;
+    toastVisibleRef.current = true;
+    setToastData({
+      product,
+      recommendation: findRecommendation(product, excludeIds, cartProductIds),
     });
-  };
+    // Не стартуем таймер, пока курсор над тостом (пауза при наведении)
+    if (!toastPausedRef.current) {
+      scheduleToastDismiss();
+    }
+  }, [clearToastTimer, scheduleToastDismiss]);
+
+  useEffect(() => {
+    return () => clearToastTimer();
+  }, [clearToastTimer]);
+
+  const addToCart = useCallback((product: any, size?: string, options?: AddToCartOptions) => {
+    let nextCartProductIds: string[] = [];
+
+    setCart(prev => {
+      const existingIndex = prev.findIndex(item => item.id === product.id && item.size === size);
+      const nextCart =
+        existingIndex > -1
+          ? prev.map((item, idx) =>
+              idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
+            )
+          : [
+              ...prev,
+              {
+                id: product.id,
+                name: product.name,
+                category: product.category || 'Товары',
+                price: product.price,
+                oldPrice: product.oldPrice,
+                quantity: 1,
+                imageType: product.type || 'food',
+                size: size || (product.sizes?.[0] || undefined)
+              }
+            ];
+
+      nextCartProductIds = nextCart.map((item) => item.id);
+      return nextCart;
+    });
+
+    if (options?.silent) {
+      // Синхронизируем открытый тост: не предлагать товар, который уже в корзине
+      setToastData((prev) => {
+        if (!prev?.recommendation) return prev;
+        if (!nextCartProductIds.includes(prev.recommendation.id)) return prev;
+        return {
+          ...prev,
+          recommendation: findRecommendation(
+            prev.product,
+            [prev.recommendation.id],
+            nextCartProductIds
+          ),
+        };
+      });
+      return;
+    }
+
+    const resolved = resolveProduct(product);
+    if (resolved) {
+      const previousProductId = lastToastProductIdRef.current;
+      const excludeIds =
+        previousProductId && previousProductId !== resolved.id ? [previousProductId] : [];
+      showCartToast(resolved, excludeIds, nextCartProductIds);
+    }
+  }, [showCartToast]);
 
   const removeFromCart = (id: string, size?: string) => {
     setCart(prev => prev.filter(item => {
@@ -209,7 +344,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         return item;
       });
-      // Remove items with quantity <= 0
       return updated.filter(item => item.quantity > 0);
     });
   };
@@ -264,14 +398,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const defaultProduct = MOCK_PRODUCTS.find(p => p.id === productId);
       const startRating = defaultProduct ? defaultProduct.rating : 5.0;
       const startReviews = defaultProduct ? defaultProduct.reviews : 0;
-      
+
       const currentRating = existing ? existing.rating : startRating;
       const currentReviews = existing ? existing.reviews : startReviews;
       const hasUserRated = existing && existing.userRating !== undefined;
-      
+
       let nextReviews = currentReviews;
       let nextRating = currentRating;
-      
+
       if (hasUserRated) {
         const prevUserRating = existing.userRating || 0;
         nextRating = Math.round(((currentRating * currentReviews - prevUserRating + rating) / currentReviews) * 10) / 10;
@@ -279,7 +413,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         nextReviews = currentReviews + 1;
         nextRating = Math.round(((currentRating * currentReviews + rating) / nextReviews) * 10) / 10;
       }
-      
+
       const updated = {
         ...prev,
         [productId]: {
@@ -288,7 +422,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           userRating: rating
         }
       };
-      
+
       localStorage.setItem('aibolit_product_ratings', JSON.stringify(updated));
       return updated;
     });
@@ -315,9 +449,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       pickupAddress,
       setPickupAddress,
       productRatings,
-      submitProductRating
+      submitProductRating,
+      toastData,
+      dismissToast,
+      pauseToastTimer,
+      resumeToastTimer,
     }}>
       {children}
+      <CartToast />
     </AppContext.Provider>
   );
 }

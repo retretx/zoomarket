@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 export default function AuthDrawer() {
   const { user, login, updateAddress, logout, authDrawerOpen, setAuthDrawerOpen } = useApp();
-
+  
   // Login form fields
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -178,7 +178,7 @@ export default function AuthDrawer() {
                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block pl-1">
                       История заказов
                     </span>
-
+                    
                     <div className="space-y-2.5">
                       <div className="bg-white border border-stone-100 p-3 rounded-xl flex items-center justify-between text-xs">
                         <div className="space-y-1">
@@ -271,7 +271,7 @@ export default function AuthDrawer() {
                       </div>
                     </div>
 
-                    {/* <div className="space-y-1.5">
+                    <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-stone-500 font-comfortaa uppercase tracking-wider block">
                         Электронная почта (Email)
                       </label>
@@ -287,7 +287,7 @@ export default function AuthDrawer() {
                           className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-[#E7E5E4] rounded-xl text-sm font-inter text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-[#F97316] focus:ring-3 focus:ring-orange-500/10 transition-all font-medium"
                         />
                       </div>
-                    </div> */}
+                    </div>
 
                     <div className="pt-3">
                       <motion.button
@@ -301,6 +301,13 @@ export default function AuthDrawer() {
                     </div>
                   </form>
 
+                  {/* Trust guarantees */}
+                  <div className="pt-6 border-t border-stone-100 flex items-start gap-2.5 text-[11px] text-stone-400 font-inter leading-relaxed">
+                    <Award className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                    <p>
+                      Авторизация полностью безопасна. Данные сеанса шифруются локально на вашем устройстве в соответствии с регламентом «Айболит Охрана».
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

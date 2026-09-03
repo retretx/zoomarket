@@ -6,6 +6,7 @@ import { ChevronLeft, Info, HelpCircle, Shield, Sparkles, MapPin } from 'lucide-
 import { motion } from 'motion/react';
 
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import LottiePlayer from '@/components/LottiePlayer';
 import { MOCK_DISTRICTS } from '@/lib/data';
 
@@ -231,11 +232,7 @@ export default function DeliveryPage() {
       </main>
 
       {/* Primary footer */}
-      <footer className="bg-stone-900 text-stone-450 py-8 px-4 border-t border-stone-800 text-center">
-        <div className="max-w-7xl mx-auto text-xs text-stone-400 font-inter">
-          🐾 Айболит за быструю доставку. Разработано с любовью к усатым и крылатым.
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Star, ShoppingCart, Heart, Plus, Minus } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
-import LogoMark from '@/components/LogoMark';
+import { encodeCatalogSlugSegment } from '@/lib/catalogSlug';
+import ProductIcon from '@/components/ProductIcon';
 
 export interface Product {
   id: string;
@@ -45,7 +46,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const pathname = usePathname();
   const isFromAll = pathname ? (pathname.endsWith(`/${product.subcategoryId}`) || pathname.endsWith(`/${product.subcategoryId}/all`)) : false;
 
-  const detailUrl = `/catalog/${product.animal}/${product.subcategoryId}/${encodeURIComponent(product.subSection || 'all')}/${product.id}${isFromAll ? '?from=all' : ''}`;
+  const detailUrl = `/catalog/${product.animal}/${product.subcategoryId}/${encodeCatalogSlugSegment(product.subSection || 'all')}/${product.id}${isFromAll ? '?from=all' : ''}`;
 
   return (
     <div
@@ -68,10 +69,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* Favorites Toggle Button */}
-      <button
+      <button 
         onClick={() => toggleFavorite(product.id)}
-        className={`absolute top-3 right-3 z-10 p-2 rounded-full shadow-sm backdrop-blur-xs transition-colors cursor-pointer ${liked ? 'bg-red-50 text-red-500' : 'bg-white/80 hover:bg-white text-stone-400 hover:text-red-500'
-          }`}
+        className={`absolute top-3 right-3 z-10 p-2 rounded-full shadow-sm backdrop-blur-xs transition-colors cursor-pointer ${
+          liked ? 'bg-red-50 text-red-500' : 'bg-white/80 hover:bg-white text-stone-400 hover:text-red-500'
+        }`}
       >
         <Heart className={`w-4 h-4 ${liked ? 'fill-current' : ''}`} />
       </button>
@@ -79,14 +81,14 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Image Stage */}
       <Link href={detailUrl} className="relative aspect-square w-full bg-stone-50 flex items-center justify-center overflow-hidden border-b border-stone-50 p-6 block">
         {/* Hover image pulse zoom */}
-        <motion.div
+        <motion.div 
           className="w-full h-full flex items-center justify-center"
           whileHover={{ scale: 1.12, rotate: -2 }}
           transition={{ type: "spring", stiffness: 300, damping: 15 }}
         >
-          <LogoMark className="w-28 h-28" alt={product.name} />
+          <ProductIcon type={product.type} alt={product.name} />
         </motion.div>
-
+        
         {/* Category Label at bottom of image */}
         <span className="absolute bottom-2 right-2 bg-stone-100/95 text-[10px] font-bold text-stone-600 font-inter px-2.5 py-0.5 rounded-md uppercase tracking-wider">
           {product.category}
@@ -96,13 +98,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Details Content */}
       <div className="p-5 flex-1 flex flex-col justify-between gap-4">
         <div>
-          {/* Rating and animal badge info */}
-          <div className="flex items-center justify-between gap-2 mb-2 font-mono text-[11px] text-stone-500">
-            <div className="flex items-center gap-1 text-amber-400">
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <span className="font-bold text-stone-700">{product.rating}</span>
-              <span className="text-stone-400">({product.reviews})</span>
-            </div>
+          {/* Rating */}
+          <div className="flex items-center gap-1 mb-2 font-mono text-[11px] text-amber-400">
+            <Star className="w-3.5 h-3.5 fill-current" />
+            <span className="font-bold text-stone-700">{product.rating}</span>
+            <span className="text-stone-400">({product.reviews})</span>
           </div>
 
           {/* Product Name */}
@@ -121,10 +121,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`text-[10px] font-bold font-inter px-2 py-1 rounded-md transition-all cursor-pointer border ${isActive
-                      ? 'bg-stone-900 border-stone-900 text-white shadow-xs'
-                      : 'bg-stone-50 hover:bg-stone-100 text-stone-600 border-stone-200/50'
-                      }`}
+                    className={`text-[10px] font-bold font-inter px-2 py-1 rounded-md transition-all cursor-pointer border ${
+                      isActive
+                        ? 'bg-stone-900 border-stone-900 text-white shadow-xs'
+                        : 'bg-stone-50 hover:bg-stone-100 text-stone-600 border-stone-200/50'
+                    }`}
                   >
                     {size}
                   </button>

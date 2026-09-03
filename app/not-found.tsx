@@ -1,8 +1,8 @@
-'use client';
 import React from 'react';
 import Link from 'next/link';
 import { Home, HelpCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import LottiePlayer from '@/components/LottiePlayer';
 
 export default function NotFound() {
@@ -41,15 +41,7 @@ export default function NotFound() {
           </Link>
         </div>
       </main>
-      <footer className="bg-stone-900 text-stone-400 py-10 px-4 mt-20 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-inter text-stone-400">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-white font-comfortaa text-sm">🐾 Айболит</span>
-            <span>— Забота в каждой детали</span>
-          </div>
-          <p>© 2026 Сеть зоомаркетов «Айболит». Все права защищены.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -2,18 +2,37 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Calendar, ChevronLeft, Gift, Percent, Truck, Heart } from 'lucide-react';
+import { Sparkles, Calendar, ChevronLeft, Gift, Heart, Percent } from 'lucide-react';
 
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
-import LogoMark from '@/components/LogoMark';
 import { MOCK_PRODUCTS } from '@/lib/data';
 
+const renderPromoLogo = (className: string, size: number) => (
+  <Image
+    src="/logo_aibolit.jpg"
+    alt=""
+    width={size}
+    height={size}
+    className={`object-cover rounded-full opacity-90 ${className}`}
+  />
+);
 
 export default function PromotionsPage() {
   const hotDeals = MOCK_PRODUCTS.filter(p => p.onSale);
   const [currentSlide, setCurrentSlide] = React.useState(0);
+
+  const logoIllustration = renderPromoLogo(
+    'w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40',
+    160
+  );
+  const promoBannerLogo = renderPromoLogo(
+    'w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36',
+    144
+  );
 
   const slides = [
     {
@@ -31,10 +50,7 @@ export default function PromotionsPage() {
       expireBg: "bg-orange-100 text-orange-850 border-orange-200",
       background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)',
       borderClass: 'border-orange-100',
-      illustrationShellClass: 'bg-white/80 border-orange-200/80 text-orange-500 shadow-[0_20px_60px_-20px_rgba(234,88,12,0.35)]',
-      illustration: (
-        <Percent className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24" strokeWidth={2.2} absoluteStrokeWidth />
-      )
+      illustration: logoIllustration
     },
     {
       id: 2,
@@ -51,16 +67,13 @@ export default function PromotionsPage() {
       expireBg: "bg-emerald-100 text-emerald-850 border-emerald-200",
       background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
       borderClass: 'border-emerald-100',
-      illustrationShellClass: 'bg-white/80 border-emerald-200/80 text-emerald-600 shadow-[0_20px_60px_-20px_rgba(5,150,105,0.32)]',
-      illustration: (
-        <Truck className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24" strokeWidth={2.1} absoluteStrokeWidth />
-      )
+      illustration: logoIllustration
     },
     {
       id: 3,
       badge: "Время играть",
       badgeBg: "bg-sky-500",
-      // badgeIcon: <Sparkles className="w-3.5 h-3.5" />,
+      badgeIcon: <Sparkles className="w-3.5 h-3.5" />,
       title: (
         <>
           Купи игрушку — <br /> верни хвостику радость!
@@ -71,10 +84,7 @@ export default function PromotionsPage() {
       expireBg: "bg-sky-100 text-sky-850 border-sky-200",
       background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
       borderClass: 'border-sky-100',
-      illustrationShellClass: 'bg-white/80 border-sky-200/80 text-sky-500 shadow-[0_20px_60px_-20px_rgba(2,132,199,0.32)]',
-      illustration: (
-        <Gift className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24" strokeWidth={2.1} absoluteStrokeWidth />
-      )
+      illustration: logoIllustration
     }
   ];
 
@@ -93,17 +103,16 @@ export default function PromotionsPage() {
     return () => clearTimeout(timer);
   }, [currentSlide, timerDuration, slides.length]);
 
-
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1">
-
+        
         {/* Back Link Breadcrumb */}
         <div className="mb-6">
-          <Link
-            href="/"
+          <Link 
+            href="/" 
             className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-orange-500 font-comfortaa transition-colors group"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
@@ -128,15 +137,15 @@ export default function PromotionsPage() {
                   {slides[currentSlide].badgeIcon}
                   <span>{slides[currentSlide].badge}</span>
                 </div>
-
+                
                 <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-stone-950 font-comfortaa leading-tight">
                   {slides[currentSlide].title}
                 </h1>
-
+                
                 <p className="text-xs sm:text-sm text-stone-700 font-inter leading-relaxed max-w-md">
                   {slides[currentSlide].subtitle}
                 </p>
-
+                
                 {/* Expire date indicator */}
                 <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-sans text-xs font-bold border ${slides[currentSlide].expireBg}`}>
                   <Calendar className="w-4 h-4" />
@@ -145,9 +154,7 @@ export default function PromotionsPage() {
               </div>
 
               {/* Illustration in the Corner */}
-              <div
-                className={`absolute right-4 bottom-4 opacity-20 sm:relative sm:opacity-100 sm:right-0 sm:bottom-0 shrink-0 w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 p-3 rounded-[32px] border backdrop-blur-sm overflow-hidden flex items-center justify-center ${slides[currentSlide].illustrationShellClass}`}
-              >
+              <div className="absolute right-4 bottom-4 opacity-20 sm:relative sm:opacity-100 sm:right-0 sm:bottom-0 shrink-0 w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 bg-white/40 p-3 rounded-3xl border border-white/60 flex items-center justify-center">
                 {slides[currentSlide].illustration}
               </div>
             </motion.div>
@@ -163,8 +170,9 @@ export default function PromotionsPage() {
                 key={idx}
                 type="button"
                 onClick={() => handleDotClick(idx)}
-                className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer border-0 outline-none ${isActive ? 'w-8 bg-orange-500 shadow-sm' : 'w-2.5 bg-stone-300 hover:bg-stone-400'
-                  }`}
+                className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer border-0 outline-none ${
+                  isActive ? 'w-8 bg-orange-500 shadow-sm' : 'w-2.5 bg-stone-300 hover:bg-stone-400'
+                }`}
                 aria-label={`Слайд ${idx + 1}`}
               />
             );
@@ -197,10 +205,8 @@ export default function PromotionsPage() {
                 subtitle: "Скидки до -25% на комплексные витамины, пребиотики, рыбий жир и полезные лакомства для кошек и собак. Поддержите иммунитет любимца!",
                 bgGradient: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
                 borderClass: "border-amber-200",
-                // badgeIcon: <Sparkles className="w-3.5 h-3.5 text-amber-500" />,
-                illustration: (
-                  <LogoMark className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36" />
-                ),
+                badgeIcon: <Sparkles className="w-3.5 h-3.5 text-amber-500" />,
+                illustration: promoBannerLogo,
                 link: "/catalog/cat/cat-treat?onSale=true",
                 buttonText: "Выбрать витамины 💊"
               },
@@ -213,9 +219,7 @@ export default function PromotionsPage() {
                 bgGradient: "linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)",
                 borderClass: "border-sky-200",
                 badgeIcon: <Heart className="w-3.5 h-3.5 text-sky-500" />,
-                illustration: (
-                  <LogoMark className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36" />
-                ),
+                illustration: promoBannerLogo,
                 link: "/catalog/cat/cat-flea?onSale=true",
                 buttonText: "Защитить любимца 🛡️"
               }
@@ -238,7 +242,7 @@ export default function PromotionsPage() {
 
                       {/* Dynamic insert banner between chunks */}
                       {hasBanner && (
-                        <div
+                        <div 
                           className={`relative overflow-hidden rounded-[24px] shadow-aibolit border ${banner.borderClass} p-6 sm:p-8 md:p-12 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 my-10`}
                           style={{ background: banner.bgGradient }}
                         >
@@ -247,16 +251,16 @@ export default function PromotionsPage() {
                               {banner.badgeIcon}
                               <span>{banner.badge}</span>
                             </div>
-
+                            
                             <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-stone-950 font-comfortaa leading-tight">
                               {banner.title}
                             </h3>
-
+                            
                             <p className="text-xs sm:text-sm text-stone-700 font-inter leading-relaxed max-w-md">
                               {banner.subtitle}
                             </p>
-
-                            <Link
+                            
+                            <Link 
                               href={banner.link}
                               className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold font-comfortaa rounded-full text-xs transition-all shadow-sm shadow-orange-500/10 cursor-pointer"
                             >
@@ -277,14 +281,6 @@ export default function PromotionsPage() {
           })()}
         </section>
 
-        {/* Grid View */}
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {hotDeals.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section> */}
-
         {/* Static Gift promo coupon visual (Premium feel) */}
         <section className="mt-16 bg-green-500/10 border border-green-200 p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 text-center md:text-left flex-col md:flex-row">
@@ -299,22 +295,14 @@ export default function PromotionsPage() {
             </div>
           </div>
           <div className="relative font-comfortaa bg-white p-3 px-6 rounded-2xl border-2 border-dashed border-green-500 font-black text-green-700 tracking-wider text-sm shadow-sm">
-            ПРОМОКОД: AIBOLIT10
+            ПРОМОКОД: AIBOLIT2026
           </div>
         </section>
 
       </main>
 
       {/* Primary footer */}
-      <footer className="bg-stone-900 text-stone-400 py-10 px-4 mt-16 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-inter">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-white font-comfortaa text-sm">🐾 Айболит</span>
-            <span>— Заботливые скидки хвостикам</span>
-          </div>
-          <p>© 2026 Айболит Зоомаркет. Все права защищены.</p>
-        </div>
-      </footer>
-    </div >
+      <Footer />
+    </div>
   );
 }

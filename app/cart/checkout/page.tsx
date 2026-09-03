@@ -1,18 +1,21 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ChevronLeft, MapPin, CheckCircle, CreditCard, Clock,
+import { 
+  ChevronLeft, MapPin, CheckCircle, CreditCard, Clock, 
   User, Phone, FileText, ShoppingBag, ShieldCheck, Mail, Calendar, Truck, Store, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import LottiePlayer from '@/components/LottiePlayer';
-import LogoMark from '@/components/LogoMark';
 import { useApp } from '@/lib/AppContext';
+import Image from 'next/image';
 
 // Store locations mock data
 const PICKUP_STORES = [
@@ -44,11 +47,11 @@ const PICKUP_STORES = [
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const {
-    cart,
-    checkoutType,
-    pickupAddress,
-    setPickupAddress,
+  const { 
+    cart, 
+    checkoutType, 
+    pickupAddress, 
+    setPickupAddress, 
     user,
     clearCart,
     productRatings,
@@ -74,7 +77,7 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState(user?.phone || '');
   const [email, setEmail] = useState(user?.email || '');
   const [comment, setComment] = useState('');
-
+  
   // Delivery address fields
   const [street, setStreet] = useState(user?.address || '');
   const [house, setHouse] = useState(user?.address ? '—' : '');
@@ -106,7 +109,7 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Save current cart items before clearing
     setPurchasedItems([...cart]);
 
@@ -135,7 +138,7 @@ export default function CheckoutPage() {
       <Navbar />
 
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow">
-
+        
         <AnimatePresence mode="wait">
           {!orderPlaced ? (
             /* ================= CHECKOUT PAGE STEP ================= */
@@ -148,8 +151,8 @@ export default function CheckoutPage() {
             >
               {/* Back Breadcrumb */}
               <div>
-                <Link
-                  href="/cart"
+                <Link 
+                  href="/cart" 
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-orange-500 font-comfortaa transition-colors group"
                 >
                   <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
@@ -170,7 +173,7 @@ export default function CheckoutPage() {
               <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-8">
                 {/* Inputs area (8 columns) - Combined into a single cohesive Card */}
                 <div className="lg:col-span-8 bg-white border border-stone-150 rounded-3xl p-6 md:p-8 shadow-sm space-y-8">
-
+                  
                   {/* Step 1: Contact Details */}
                   <div className="space-y-5 border-b border-stone-100 pb-8">
                     <h2 className="text-base font-bold font-comfortaa text-stone-900 flex items-center gap-2">
@@ -245,7 +248,7 @@ export default function CheckoutPage() {
 
                   {/* Step 2: Receive Details (Dynamic depending on checkoutType) */}
                   <div className="space-y-6 border-b border-stone-100 pb-8">
-
+                    
                     {checkoutType === 'delivery' ? (
                       /* --- DELIVERY DETAILS --- */
                       <div className="space-y-5">
@@ -352,10 +355,11 @@ export default function CheckoutPage() {
                                 key={store.id}
                                 type="button"
                                 onClick={() => setPickupAddress(store.address)}
-                                className={`w-full text-left p-4 border rounded-2xl transition-all cursor-pointer flex gap-3 ${isSelected
-                                  ? 'bg-orange-500/10 border-orange-500 shadow-xs'
-                                  : 'bg-stone-50 border-stone-150 hover:bg-stone-100/50'
-                                  }`}
+                                className={`w-full text-left p-4 border rounded-2xl transition-all cursor-pointer flex gap-3 ${
+                                  isSelected
+                                    ? 'bg-orange-500/10 border-orange-500 shadow-xs'
+                                    : 'bg-stone-50 border-stone-150 hover:bg-stone-100/50'
+                                }`}
                               >
                                 <MapPin className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isSelected ? 'text-orange-500' : 'text-stone-400'}`} />
                                 <div className="space-y-1 font-inter">
@@ -408,7 +412,7 @@ export default function CheckoutPage() {
 
                 {/* Right: Checkout Sidebar summary & Pay button (4 columns) */}
                 <div className="lg:col-span-4 bg-white border border-stone-150 rounded-3xl p-6 shadow-sm space-y-6">
-
+                  
                   <h3 className="text-sm font-bold font-comfortaa text-stone-500 uppercase tracking-widest leading-none block">
                     Ваш заказ
                   </h3>
@@ -464,10 +468,10 @@ export default function CheckoutPage() {
                     <span>Подтвердить и заказать</span>
                   </motion.button>
 
-                  {/* <div className="flex gap-2.5 text-[10px] text-stone-400 font-inter leading-relaxed bg-stone-50 p-3.5 rounded-xl border border-stone-100">
+                  <div className="flex gap-2.5 text-[10px] text-stone-400 font-inter leading-relaxed bg-stone-50 p-3.5 rounded-xl border border-stone-100">
                     <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
                     <p>Нажимая кнопку, вы соглашаетесь с условиями пользовательского соглашения ветеринарного ведомства «Айболит».</p>
-                  </div> */}
+                  </div>
 
                 </div>
 
@@ -490,7 +494,7 @@ export default function CheckoutPage() {
             >
               {/* Confetti Visual & Tick Badge */}
               <div className="text-center space-y-4">
-                {/* {checkoutType === 'delivery' ? (
+                {checkoutType === 'delivery' ? (
                   <div className="h-52 w-full max-w-lg mx-auto mb-2">
                     <LottiePlayer type="courier-scooter" className="h-full w-full" />
                   </div>
@@ -501,29 +505,24 @@ export default function CheckoutPage() {
                     </div>
                     <p className="text-xs font-semibold text-stone-600 font-inter mt-3">Ваш заказ успешно оформлен! 🎉🐾</p>
                   </div>
-                )} */}
-
+                )}
+                
                 <div className="space-y-1">
-                  <div className="h-20 w-full max-w-lg mx-auto mb-2 flex flex-col items-center justify-center">
-                    <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center border border-green-100 shadow-sm text-green-500">
-                      <CheckCircle className="w-10 h-10" />
-                    </div>
-                  </div>
                   <span className="text-[10px] font-extrabold text-green-600 bg-green-100/70 px-3 py-1 rounded-full uppercase tracking-wider font-comfortaa">
-                    Заказ принят в обработку!
+                    Заказ принят в обработку! 🚀
                   </span>
                   <h1 className="text-2xl sm:text-3xl font-black text-stone-900 font-comfortaa tracking-tight pt-2">
                     Спасибо за доверие, {name}!
                   </h1>
                   <p className="text-xs sm:text-sm text-stone-500 font-inter max-w-lg mx-auto leading-relaxed">
-                    Наши специалисты уже упаковывают самые свежие вкусняшки для вашего пушистого любимца!
+                    Наши ветеринарные специалисты уже упаковывают самые свежие вкусняшки для вашего пушистого любимца!
                   </p>
                 </div>
               </div>
 
               {/* Core Receipt Card (Aesthetic Details) */}
               <div className="bg-white border border-stone-150 rounded-[28px] shadow-sm overflow-hidden divide-y divide-stone-150">
-
+                
                 {/* Meta details header block */}
                 <div className="p-6 bg-stone-50/50 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-inter font-medium text-stone-600">
                   <div className="space-y-1 border-r border-stone-150/60 pr-2">
@@ -561,7 +560,7 @@ export default function CheckoutPage() {
                   <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider font-comfortaa">
                     Детали доставки и контакты
                   </h3>
-
+                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-inter">
                     <div className="space-y-1 bg-stone-50 p-3.5 rounded-xl border border-stone-100">
                       <span className="text-stone-400 font-bold block">Получатель:</span>
@@ -598,13 +597,13 @@ export default function CheckoutPage() {
 
                 {/* Summary Guarantee */}
                 <div className="p-6 bg-stone-50/30 text-center text-xs font-inter text-stone-500 leading-normal">
-                  Копия чека и статус отслеживания курьера отправлены вам по SMS на номер <strong>{phone}</strong>. Мы сохраняем историю вашей заботы о питомце!
+                  🧬 Копия чека и статус отслеживания курьера отправлены вам по SMS на номер <strong>{phone}</strong>. Мы сохраняем историю вашей заботы о питомце!
                 </div>
 
               </div>
 
               {/* RATE PURCHASED PRODUCTS */}
-              {/* {purchasedItems.length > 0 && (
+              {purchasedItems.length > 0 && (
                 <div className="bg-white border border-stone-150 rounded-[28px] p-6 shadow-sm space-y-6">
                   <div className="space-y-1.5 border-b border-stone-100 pb-4">
                     <h2 className="text-base font-bold font-comfortaa text-stone-900 flex items-center gap-2">
@@ -622,8 +621,14 @@ export default function CheckoutPage() {
                       return (
                         <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 p-1">
-                              <LogoMark className="w-full h-full" alt={item.name} />
+                            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 overflow-hidden p-1">
+                              <Image
+                                src="/logo_aibolit.jpg"
+                                alt=""
+                                width={32}
+                                height={32}
+                                className="w-full h-full object-cover rounded-full"
+                              />
                             </div>
                             <div>
                               <span className="text-xs font-bold text-stone-850 block line-clamp-1 leading-tight">{item.name}</span>
@@ -644,14 +649,15 @@ export default function CheckoutPage() {
                                     aria-label={`Оценить на ${stars}`}
                                   >
                                     <Star
-                                      className={`w-5 h-5 ${isLit ? 'text-amber-400 fill-amber-400' : 'text-stone-300'
-                                        } transition-colors`}
+                                      className={`w-5 h-5 ${
+                                        isLit ? 'text-amber-400 fill-amber-400' : 'text-stone-300'
+                                      } transition-colors`}
                                     />
                                   </button>
                                 );
                               })}
                             </div>
-
+                            
                             {itemUserRating !== undefined ? (
                               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 animate-pulse">
                                 Оценено!
@@ -667,16 +673,31 @@ export default function CheckoutPage() {
                     })}
                   </div>
                 </div>
-              )} */}
+              )}
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2.5">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                 <Link
                   href="/"
                   className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold font-comfortaa text-xs sm:text-sm rounded-full shadow-md shadow-orange-500/10 text-center w-full sm:w-auto"
                 >
                   Вернуться в каталог 🛍️
                 </Link>
+                <button
+                  onClick={() => {
+                    // Reset page states
+                    setName('');
+                    setPhone('');
+                    setStreet('');
+                    setHouse('');
+                    setComment('');
+                    setOrderPlaced(false);
+                    router.push('/');
+                  }}
+                  className="px-8 py-3.5 border border-stone-300 hover:bg-stone-50 text-stone-700 font-bold font-comfortaa text-xs sm:text-sm rounded-full text-center w-full sm:w-auto"
+                >
+                  На главную страницу
+                </button>
               </div>
 
             </motion.div>
@@ -685,15 +706,7 @@ export default function CheckoutPage() {
 
       </main>
 
-      <footer className="bg-stone-900 text-stone-400 py-10 px-4 mt-20 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-inter">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-white font-comfortaa text-sm">🐾 Айболит</span>
-            <span>— Забота в каждой крохе</span>
-          </div>
-          <p>© 2026 Сеть зоомаркетов «Айболит». Все права защищены.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

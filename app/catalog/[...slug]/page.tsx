@@ -7,12 +7,11 @@ interface CatalogProps {
 }
 
 export async function generateStaticParams() {
-  const paths: any[] = [
-    { slug: [] },
-    { slug: undefined },
-    { slug: [''] }
-  ];
+  const paths: Array<{ slug: string[] }> = [];
 
+  // При output:'export' кириллические сегменты нужно заранее percent-encode,
+  // иначе статический хостинг/Windows FS не найдёт путь. На клиенте updateUrl
+  // нормализует повторный encode через encodeCatalogSlugSegment.
   Object.keys(CATALOG_STRUCTURE).forEach((animal) => {
     paths.push({ slug: [animal] });
     const group = CATALOG_STRUCTURE[animal];
@@ -22,7 +21,6 @@ export async function generateStaticParams() {
         paths.push({ slug: [animal, sub.id, 'all'] });
         if (sub.subSections) {
           sub.subSections.forEach((sec) => {
-            paths.push({ slug: [animal, sub.id, sec] });
             paths.push({ slug: [animal, sub.id, encodeURIComponent(sec)] });
           });
         }
@@ -30,10 +28,22 @@ export async function generateStaticParams() {
     }
   });
 
+  // Раздел брендов: обзор + страницы отдельных брендов
+  paths.push({ slug: ['brands'] });
+  const uniqueBrands = new Set<string>();
+  MOCK_PRODUCTS.forEach((product) => {
+    if (product.brand?.trim()) {
+      uniqueBrands.add(product.brand.trim());
+    }
+  });
+  uniqueBrands.forEach((brand) => {
+    paths.push({ slug: ['brands', encodeURIComponent(brand)] });
+  });
+
   // 4-level product detail pages
   MOCK_PRODUCTS.forEach((product) => {
     if (product.animal && product.subcategoryId) {
-      const sec = product.subSection || 'all';
+      const sec = product.subSection ? encodeURIComponent(product.subSection) : 'all';
       paths.push({
         slug: [
           product.animal,
@@ -42,16 +52,6 @@ export async function generateStaticParams() {
           product.id
         ]
       });
-      if (sec !== 'all') {
-        paths.push({
-          slug: [
-            product.animal,
-            product.subcategoryId,
-            encodeURIComponent(sec),
-            product.id
-          ]
-        });
-      }
     }
   });
 
