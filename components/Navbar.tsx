@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '@/lib/AppContext';
 import { MOCK_PRODUCTS } from '@/lib/data';
 import { encodeCatalogSlugSegment } from '@/lib/catalogSlug';
+import { withAssetPrefix } from '@/lib/sitePaths';
 import AuthDrawer from './AuthDrawer';
 
 function SearchParamsSync({ 
@@ -168,7 +169,7 @@ export default function Navbar({ heroBgClass }: { heroBgClass?: string }) {
             {/* Logo on Left */}
             <Link href="/catalog" className="flex-shrink-0 flex items-center gap-2 group">
               <Image 
-                src="/logo_aibolit.jpg" 
+                src={withAssetPrefix('/logo_aibolit.jpg')} 
                 alt="Айболит" 
                 width={52} 
                 height={52} 
@@ -240,7 +241,7 @@ export default function Navbar({ heroBgClass }: { heroBgClass?: string }) {
                         >
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform border border-stone-100 bg-stone-50 overflow-hidden p-1">
                             <Image
-                              src="/logo_aibolit.jpg"
+                              src={withAssetPrefix('/logo_aibolit.jpg')}
                               alt=""
                               width={32}
                               height={32}

@@ -1,9 +1,10 @@
 import type {NextConfig} from 'next';
+import {ASSET_PREFIX, BASE_PATH} from './lib/sitePaths';
 
 const nextConfig: NextConfig = {
   output: 'export',
-  basePath: '/zoomarket',
-  assetPrefix: '/zoomarket',
+  basePath: BASE_PATH,
+  assetPrefix: ASSET_PREFIX,
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,

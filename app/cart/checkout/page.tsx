@@ -16,6 +16,7 @@ import Footer from '@/components/Footer';
 import LottiePlayer from '@/components/LottiePlayer';
 import { useApp } from '@/lib/AppContext';
 import Image from 'next/image';
+import { withAssetPrefix } from '@/lib/sitePaths';
 
 // Store locations mock data
 const PICKUP_STORES = [
@@ -623,7 +624,7 @@ export default function CheckoutPage() {
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 overflow-hidden p-1">
                               <Image
-                                src="/logo_aibolit.jpg"
+                                src={withAssetPrefix('/logo_aibolit.jpg')}
                                 alt=""
                                 width={32}
                                 height={32}

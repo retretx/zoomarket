@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/virtualCatalogApi';
 import { CategorySectionSkeleton } from './CategorySectionSkeleton';
 import { MOCK_PRODUCTS } from '@/lib/data';
+import { withAssetPrefix } from '@/lib/sitePaths';
 
 interface CategorySectionProps {
   category: Category;
@@ -113,7 +114,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
             >
               <div className="w-14 h-14 bg-stone-50/80 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-stone-100 p-2">
                 <Image
-                  src="/logo_aibolit.jpg"
+                  src={withAssetPrefix('/logo_aibolit.jpg')}
                   alt={brand}
                   width={40}
                   height={40}
@@ -159,7 +160,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                     >
                       <div className="w-14 h-14 bg-stone-50/80 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-stone-100 p-2">
                         <Image
-                          src="/logo_aibolit.jpg"
+                          src={withAssetPrefix('/logo_aibolit.jpg')}
                           alt="Айболит"
                           width={40}
                           height={40}
@@ -182,7 +183,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                   >
                     <div className="w-14 h-14 bg-stone-50/80 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-stone-100 p-2">
                       <Image
-                        src="/logo_aibolit.jpg"
+                        src={withAssetPrefix('/logo_aibolit.jpg')}
                         alt="Айболит"
                         width={40}
                         height={40}

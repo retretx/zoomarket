@@ -3,6 +3,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { ALL_MOCK_CATEGORIES } from '@/lib/api/virtualCatalogApi';
 import { Category } from '@/lib/types/virtualCatalog';
+import { stripBasePath, withBasePath } from '@/lib/sitePaths';
 import { CategorySection } from './CategorySection';
 
 interface VirtualizedCatalogContainerProps {
@@ -203,9 +204,13 @@ export const VirtualizedCatalogContainer: React.FC<VirtualizedCatalogContainerPr
         );
         // URL сбрасываем только когда ушли из раздела вверх, не при первом маунте
         if (hadCategory) {
-          const path = window.location.pathname;
+          const path = stripBasePath(window.location.pathname);
           if (path === '/catalog' || /^\/catalog\/[a-z]+$/.test(path)) {
-            window.history.replaceState(null, '', '/catalog');
+            window.history.replaceState(
+              null,
+              '',
+              `${withBasePath('/catalog')}${window.location.search}`
+            );
           }
         }
       }
@@ -218,7 +223,11 @@ export const VirtualizedCatalogContainer: React.FC<VirtualizedCatalogContainerPr
       window.dispatchEvent(
         new CustomEvent('catalogActiveCategoryChange', { detail: cat.id })
       );
-      window.history.replaceState(null, '', `/catalog/${cat.id}`);
+      window.history.replaceState(
+        null,
+        '',
+        `${withBasePath(`/catalog/${cat.id}`)}${window.location.search}`
+      );
     }
   }, [activeIndex, categories]);
 

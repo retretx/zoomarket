@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { withAssetPrefix } from '@/lib/sitePaths';
 
 export type ProductIconType = 'food' | 'toy' | 'medicine' | 'accessory';
 
@@ -14,7 +15,7 @@ interface ProductIconProps {
 export default function ProductIcon({ className, alt = '' }: ProductIconProps) {
   return (
     <Image
-      src="/logo_aibolit.jpg"
+      src={withAssetPrefix('/logo_aibolit.jpg')}
       alt={alt}
       width={96}
       height={96}

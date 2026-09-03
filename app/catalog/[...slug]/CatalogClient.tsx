@@ -25,13 +25,14 @@ import {
   getAllCategoryPillLabel,
 } from '@/lib/catalogSlug';
 import { VirtualizedCatalogContainer } from '@/components/virtualCatalog/VirtualizedCatalogContainer';
+import { withAssetPrefix } from '@/lib/sitePaths';
 
 type PetType = 'cat' | 'dog' | 'bird' | 'rodent' | 'fish';
 
 // Иллюстрация категории — единый логотип Айболит
 const renderCategoryIllustration = (_id: string) => (
   <Image
-    src="/logo_aibolit.jpg"
+    src={withAssetPrefix('/logo_aibolit.jpg')}
     alt=""
     width={56}
     height={56}
@@ -236,7 +237,7 @@ function CatalogPageContent({ params }: CatalogProps) {
         <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
           <div className="absolute inset-0 bg-emerald-300/30 rounded-full blur-2xl transform scale-90" />
           <Image
-            src="/logo_aibolit.jpg"
+            src={withAssetPrefix('/logo_aibolit.jpg')}
             alt=""
             width={280}
             height={280}
@@ -267,7 +268,7 @@ function CatalogPageContent({ params }: CatalogProps) {
         <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
           <div className="absolute inset-0 bg-orange-400/20 rounded-full blur-2xl transform scale-90" />
           <Image
-            src="/logo_aibolit.jpg"
+            src={withAssetPrefix('/logo_aibolit.jpg')}
             alt=""
             width={280}
             height={280}
@@ -287,7 +288,7 @@ function CatalogPageContent({ params }: CatalogProps) {
         <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
           <div className="absolute inset-0 bg-sky-400/20 rounded-full blur-2xl transform scale-90" />
           <Image
-            src="/logo_aibolit.jpg"
+            src={withAssetPrefix('/logo_aibolit.jpg')}
             alt=""
             width={280}
             height={280}
@@ -623,7 +624,7 @@ function CatalogPageContent({ params }: CatalogProps) {
                 </div>
                 <div className="scale-150 transform group-hover:scale-[1.75] transition-transform duration-500">
                   <Image
-                    src="/logo_aibolit.jpg"
+                    src={withAssetPrefix('/logo_aibolit.jpg')}
                     alt={activeProduct.name}
                     width={144}
                     height={144}

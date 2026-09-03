@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion } from 'motion/react';
+import { withAssetPrefix } from '@/lib/sitePaths';
 
 export default function Logo({ 
   className = 'w-12 h-12', 
@@ -21,7 +22,7 @@ export default function Logo({
         transition={{ type: "spring", stiffness: 300, damping: 15 }}
       >
         <Image
-          src="/logo_aibolit.jpg"
+          src={withAssetPrefix('/logo_aibolit.jpg')}
           alt="Айболит"
           width={96}
           height={96}

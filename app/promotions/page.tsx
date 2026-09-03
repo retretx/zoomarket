@@ -10,10 +10,11 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { MOCK_PRODUCTS } from '@/lib/data';
+import { withAssetPrefix } from '@/lib/sitePaths';
 
 const renderPromoLogo = (className: string, size: number) => (
   <Image
-    src="/logo_aibolit.jpg"
+    src={withAssetPrefix('/logo_aibolit.jpg')}
     alt=""
     width={size}
     height={size}
