@@ -862,11 +862,12 @@ function CatalogPageContent({ params }: CatalogProps) {
             </div>
 
             {/* SECTION: RECENTLY VIEWED (Вы смотрели недавно) */}
+            {/* Нужно чтобы было "Похожие товары" или "Рекоммендуемые товары" */}
             {recentlyViewedProducts.length > 0 && (
               <div className="border-t border-stone-100 pt-10 space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg sm:text-xl font-black font-comfortaa text-stone-900 uppercase tracking-tight flex items-center gap-2">
-                    <span>Вы смотрели недавно</span>
+                    <span>Похожие</span>
                   </h3>
 
                   {/* Navigation Arrows */}
