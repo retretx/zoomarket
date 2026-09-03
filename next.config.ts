@@ -1,8 +1,11 @@
 import type {NextConfig} from 'next';
+import {PHASE_DEVELOPMENT_SERVER} from 'next/constants';
 import {ASSET_PREFIX, BASE_PATH} from './lib/sitePaths';
 
-const nextConfig: NextConfig = {
-  output: 'export',
+const nextConfig = (phase: string): NextConfig => ({
+  // next dev сверяет URL с generateStaticParams строго: /%D0%A1…/ ≠ «Сухой корм» → E443.
+  // Статический экспорт нужен только на сборке (CI / npm run build).
+  ...(phase === PHASE_DEVELOPMENT_SERVER ? {} : {output: 'export' as const}),
   basePath: BASE_PATH,
   assetPrefix: ASSET_PREFIX,
   reactStrictMode: true,
@@ -34,6 +37,6 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-};
+});
 
 export default nextConfig;

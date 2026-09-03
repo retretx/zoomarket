@@ -24,6 +24,20 @@ export function encodeCatalogSlugSegment(segment: string): string {
 }
 
 /**
+ * Варианты slug для generateStaticParams при output: 'export'.
+ * next dev сравнивает urlPathname с pathname (не encodedPathname):
+ * браузер шлёт /%D0%A1…/, Pages ищет папку «Сухой корм». Нужны оба.
+ */
+export function catalogSlugParamVariants(segments: string[]): string[][] {
+  const decoded = segments.map(decodeCatalogSlugSegment);
+  const encoded = decoded.map(encodeURIComponent);
+  if (encoded.every((segment, i) => segment === decoded[i])) {
+    return [decoded];
+  }
+  return [decoded, encoded];
+}
+
+/**
  * Подпись пилла «весь раздел»: согласование рода/числа с названием категории.
  * «Корм» → «Весь корм», «Лакомства» → «Все лакомства».
  */

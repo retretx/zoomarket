@@ -1,6 +1,6 @@
 import React from 'react';
 import CatalogClient from './CatalogClient';
-import { decodeCatalogSlugSegment } from '@/lib/catalogSlug';
+import { catalogSlugParamVariants } from '@/lib/catalogSlug';
 import { CATALOG_STRUCTURE, MOCK_PRODUCTS } from '@/lib/data';
 
 interface CatalogProps {
@@ -9,28 +9,34 @@ interface CatalogProps {
 
 export async function generateStaticParams() {
   const paths: Array<{ slug: string[] }> = [];
+  const seen = new Set<string>();
 
-  // Сегменты — человеческие (кириллица, пробелы), не encodeURIComponent.
-  // GitHub Pages декодирует URL перед поиском файла: /%D0%A1.../1 → «Сухой корм/1.html».
-  // Если записать папку как %D0%A1..., обычная ссылка даст 404 (сработает только двойной encode).
+  const add = (segments: string[]) => {
+    for (const slug of catalogSlugParamVariants(segments)) {
+      const key = slug.join('\0');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      paths.push({ slug });
+    }
+  };
+
   Object.keys(CATALOG_STRUCTURE).forEach((animal) => {
-    paths.push({ slug: [animal] });
+    add([animal]);
     const group = CATALOG_STRUCTURE[animal];
     if (group && group.subcategories) {
       group.subcategories.forEach((sub) => {
-        paths.push({ slug: [animal, sub.id] });
-        paths.push({ slug: [animal, sub.id, 'all'] });
+        add([animal, sub.id]);
+        add([animal, sub.id, 'all']);
         if (sub.subSections) {
           sub.subSections.forEach((sec) => {
-            paths.push({ slug: [animal, sub.id, decodeCatalogSlugSegment(sec)] });
+            add([animal, sub.id, sec]);
           });
         }
       });
     }
   });
 
-  // Раздел брендов: обзор + страницы отдельных брендов
-  paths.push({ slug: ['brands'] });
+  add(['brands']);
   const uniqueBrands = new Set<string>();
   MOCK_PRODUCTS.forEach((product) => {
     if (product.brand?.trim()) {
@@ -38,23 +44,17 @@ export async function generateStaticParams() {
     }
   });
   uniqueBrands.forEach((brand) => {
-    paths.push({ slug: ['brands', decodeCatalogSlugSegment(brand)] });
+    add(['brands', brand]);
   });
 
-  // 4-level product detail pages
   MOCK_PRODUCTS.forEach((product) => {
     if (product.animal && product.subcategoryId) {
-      const sec = product.subSection
-        ? decodeCatalogSlugSegment(product.subSection)
-        : 'all';
-      paths.push({
-        slug: [
-          product.animal,
-          product.subcategoryId,
-          sec,
-          product.id
-        ]
-      });
+      add([
+        product.animal,
+        product.subcategoryId,
+        product.subSection || 'all',
+        product.id,
+      ]);
     }
   });
 

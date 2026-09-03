@@ -145,7 +145,7 @@ function CatalogPageContent({ params }: CatalogProps) {
     if (updates.newSlug) {
       pathSegments = updates.newSlug;
     }
-    const encodedSegments = pathSegments.map(s => encodeURIComponent(s));
+    const encodedSegments = pathSegments.map(s => encodeCatalogSlugSegment(s));
     const path = `/catalog/${encodedSegments.join('/')}`;
 
     // 2. Build new search params
